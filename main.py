@@ -7,7 +7,6 @@ from app.ui.object_tree import ConstructionTree
 from PySide6.QtGui import QColor
 from app.utils.handle_dxf import save_to_dxf_advanced, read_from_dxf
 
-# Константы для строковых значений
 COORD_SYSTEMS = {'cartesian': 'Декартова', 'polar': 'Полярная'}
 LINE_TYPES = {'solid': 'Сплошная линия', 'dash': 'Штриховая линия', 'dash_dot': 'Штрих-пунктирная', 'dash_dot_dot': 'Штрих-пунктирная с двумя точками'}
 DRAWING_MODES = {
@@ -38,8 +37,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Compas 2D")
         self.setGeometry(100, 100, 1600, 1000)
-        self.is_dark_theme = False  # По умолчанию светлая тема
-        self.current_file = None  # Track the current file
+        self.is_dark_theme = False
+        self.current_file = None
         self.initUI()
 
     def initUI(self):
@@ -66,21 +65,19 @@ class MainWindow(QMainWindow):
 
     def applyTheme(self):
         if self.is_dark_theme:
-            # Получаем handle окна
             hwnd = self.winId().__int__()
             
-            # Устанавливаем темный цвет для заголовка
             DWMWA_CAPTION_COLOR = 35
             from ctypes import windll, c_int, byref, sizeof
             try:
                 windll.dwmapi.DwmSetWindowAttribute(
                     hwnd, 
                     DWMWA_CAPTION_COLOR,
-                    byref(c_int(0x1e1e1e)), # Темно-серый цвет
+                    byref(c_int(0x1e1e1e)),
                     sizeof(c_int)
                 )
             except Exception:
-                pass  # Игнорируем ошибки для совместимости с разными платформами
+                pass
                 
             self.setStyleSheet("""
                 QMainWindow {
@@ -249,21 +246,19 @@ class MainWindow(QMainWindow):
                 }
             """)
         else:
-            # Получаем handle окна
             hwnd = self.winId().__int__()
             
-            # Возвращаем стандартный цвет заголовка
             DWMWA_CAPTION_COLOR = 35
             from ctypes import windll, c_int, byref, sizeof
             try:
                 windll.dwmapi.DwmSetWindowAttribute(
                     hwnd, 
                     DWMWA_CAPTION_COLOR,
-                    byref(c_int(-1)), # Сброс к системному цвету
+                    byref(c_int(-1)),
                     sizeof(c_int)
                 )
             except Exception:
-                pass  # Игнорируем ошибки для совместимости с разными платформами
+                pass
                 
             self.setStyleSheet("""
                 QMainWindow {
@@ -374,31 +369,26 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         mainMenu = self.menuBar()
 
-        # Create File menu
         fileMenu = mainMenu.addMenu('Файл')
         
-        # New action
         newAction = QAction('Новый', self)
         newAction.setShortcut('Ctrl+N')
         newAction.setStatusTip('Создать новый файл')
         newAction.triggered.connect(self.newFile)
         fileMenu.addAction(newAction)
         
-        # Open DXF action
         openDxfAction = QAction('Открыть DXF...', self)
         openDxfAction.setShortcut('Ctrl+O')
         openDxfAction.setStatusTip('Открыть файл DXF')
         openDxfAction.triggered.connect(self.openDxfFile)
         fileMenu.addAction(openDxfAction)
         
-        # Save action
         saveAction = QAction('Сохранить', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.setStatusTip('Сохранить файл')
         saveAction.triggered.connect(self.saveFile)
         fileMenu.addAction(saveAction)
         
-        # Save As action
         saveAsAction = QAction('Сохранить как...', self)
         saveAsAction.setShortcut('Ctrl+Shift+S')
         saveAsAction.setStatusTip('Сохранить файл как...')
@@ -407,35 +397,29 @@ class MainWindow(QMainWindow):
         
         fileMenu.addSeparator()
         
-        # Exit action
         exitAction = QAction('Выход', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Выйти из программы')
         exitAction.triggered.connect(self.close)
         fileMenu.addAction(exitAction)
 
-        # Add theme toggle button
         themeAction = QAction('Сменить тему', self)
         themeAction.setStatusTip("Переключить между светлой и темной темой")
         themeAction.triggered.connect(self.toggleTheme)
         mainMenu.addAction(themeAction)
 
-        # Add grid menu
         gridMenu = mainMenu.addMenu('Сетка')
 
-        # Grid toggle button
         gridAction = QAction('Показать/скрыть сетку', self)
         gridAction.setStatusTip("Переключить отображение сетки")
         gridAction.triggered.connect(self.toggleGrid)
         gridMenu.addAction(gridAction)
 
-        # Grid size button
         gridSizeAction = QAction('Размер сетки', self)
         gridSizeAction.setStatusTip("Изменить размер ячейки сетки")
         gridSizeAction.triggered.connect(self.setGridSize)
         gridMenu.addAction(gridSizeAction)
         
-        # Other menus
         self.createDrawingObjectsMenu(mainMenu)
         self.createLineSettingsMenu(mainMenu)
         self.createShapeSettingsMenu(mainMenu)
@@ -460,7 +444,6 @@ class MainWindow(QMainWindow):
     def createDrawingObjectsMenu(self, menu):
         drawingObjectsMenu = menu.addMenu('Объекты')
 
-        # Добавление отдельных режимов
         for mode, label in DRAWING_MODES.items():
             if not any(mode in group for group in GROUPED_DRAWING_MODES.values()):
                 action = QAction(label, self)
@@ -468,7 +451,6 @@ class MainWindow(QMainWindow):
                 action.triggered.connect(lambda checked, m=mode: self.setDrawingMode(m))
                 drawingObjectsMenu.addAction(action)
 
-        # Добавление режимов по группам в нужном порядке
         group_order = ['Линия', 'Сплайн', 'Прямоугольник', 'Многоугольник', 'Окружность', 'Дуга']
         
         for group_name in group_order:
@@ -492,41 +474,34 @@ class MainWindow(QMainWindow):
     def createShapeSettingsMenu(self, menu):
         shapeSettingsMenu = menu.addMenu('Настройки объектов')
         
-        # Кнопка выбора цвета
         colorAction = QAction('Выбрать цвет', self)
         colorAction.setStatusTip("Выбрать цвет для новых построений")
         colorAction.triggered.connect(self.chooseColor)
         shapeSettingsMenu.addAction(colorAction)
         
-        # Кнопка изменения толщины линии
         lineThicknessAction = QAction('Толщина линии', self)
         lineThicknessAction.setStatusTip("Изменить толщину линии")
         lineThicknessAction.triggered.connect(self.setLineThickness)
         shapeSettingsMenu.addAction(lineThicknessAction)
     
     def chooseColor(self):
-        """
-        Открывает диалог выбора стандартных CAD-совместимых цветов
-        """
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, QGridLayout
         from PySide6.QtGui import QColor, QIcon, QPixmap
         from PySide6.QtCore import Qt, QSize
         
-        # Стандартные цвета AutoCAD, совместимые с большинством CAD-программ
         standard_colors = {
-            "Черный": (0, 0, 0),          # Black (0)
-            "Красный": (255, 0, 0),       # Red (1)
-            "Желтый": (255, 255, 0),      # Yellow (2)
-            "Зеленый": (0, 255, 0),       # Green (3)
-            "Голубой": (0, 255, 255),     # Cyan (4)
-            "Синий": (0, 0, 255),         # Blue (5)
-            "Фиолетовый": (255, 0, 255),  # Magenta (6)
-            "Белый": (255, 255, 255),     # White (7)
-            "Серый": (128, 128, 128),     # Gray (8)
-            "Светло-серый": (192, 192, 192)  # Light Gray (9)
+            "Черный": (0, 0, 0),
+            "Красный": (255, 0, 0),
+            "Желтый": (255, 255, 0),
+            "Зеленый": (0, 255, 0),
+            "Голубой": (0, 255, 255),
+            "Синий": (0, 0, 255),
+            "Фиолетовый": (255, 0, 255),
+            "Белый": (255, 255, 255),
+            "Серый": (128, 128, 128),
+            "Светло-серый": (192, 192, 192)
         }
         
-        # Создаем диалог выбора цвета
         dialog = QDialog(self)
         dialog.setWindowTitle("Выберите CAD-совместимый цвет")
         dialog.setMinimumWidth(400)
@@ -534,22 +509,18 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.setSpacing(10)
         
-        # Добавляем заголовок
         info_label = QLabel("Выберите один из стандартных CAD-совместимых цветов:")
         info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(info_label)
         
-        # Создаем сетку для цветов (3 колонки)
         grid = QGridLayout()
         grid.setSpacing(10)
         
-        # Функция для создания цветного квадрата
         def create_color_square(color):
             pixmap = QPixmap(32, 32)
             pixmap.fill(color)
             return QIcon(pixmap)
         
-        # Добавляем цветные кнопки в сетку
         row, col = 0, 0
         for color_name, rgb in standard_colors.items():
             color = QColor(*rgb)
@@ -560,7 +531,6 @@ class MainWindow(QMainWindow):
             button.setMinimumHeight(50)
             button.clicked.connect(lambda checked, c=color: self.setSelectedColor(c, dialog))
             
-            # Добавляем метку с названием цвета под кнопкой
             color_layout = QVBoxLayout()
             color_layout.addWidget(button)
             color_layout.addWidget(QLabel(color_name, alignment=Qt.AlignCenter))
@@ -568,13 +538,12 @@ class MainWindow(QMainWindow):
             grid.addLayout(color_layout, row, col)
             
             col += 1
-            if col > 2:  # 3 колонки
+            if col > 2:
                 col = 0
                 row += 1
         
         layout.addLayout(grid)
         
-        # Кнопки Отмена/OK в нижней части
         buttons_layout = QHBoxLayout()
         cancel_button = QPushButton("Отмена")
         cancel_button.clicked.connect(dialog.reject)
@@ -586,9 +555,6 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def setSelectedColor(self, color, dialog):
-        """
-        Устанавливает выбранный цвет и закрывает диалог
-        """
         if color.isValid():
             self.canvas.currentColor = color
             self.statusBar.showMessage(f"Цвет линии изменен на {color.name()}")
@@ -597,13 +563,11 @@ class MainWindow(QMainWindow):
     def createCoordinateSystemMenu(self, menu):
         coordinateSystemMenu = menu.addMenu('Система координат')
 
-        # Создаем действие для "Полярная"
         polarAction = QAction('Полярная', self)
         polarAction.setStatusTip("Переключиться на Полярную систему координат")
         polarAction.triggered.connect(lambda: self.setCoordinateSystem('polar'))
         coordinateSystemMenu.addAction(polarAction)
         
-        # Создаем действие для "Декартова"
         cartesianAction = QAction('Декартова', self)
         cartesianAction.setStatusTip("Переключиться на Декартову систему координат")
         cartesianAction.triggered.connect(lambda: self.setCoordinateSystem('cartesian'))
@@ -618,18 +582,16 @@ class MainWindow(QMainWindow):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
         
-        # Add file name label to status bar
         self.fileNameLabel = QLabel("Новый файл")
         self.statusBar.addPermanentWidget(self.fileNameLabel)
 
     def handleManualInput(self):
-        self.canvas.handle_manual_input()  # Вызываем метод handle_manual_input из Canvas
+        self.canvas.handle_manual_input()
 
     def setCoordinateSystem(self, mode):
-        self.canvas.inputCoordinateSystem = mode  # Используем атрибут из canvas.py для изменения системы координат
+        self.canvas.inputCoordinateSystem = mode
         self.statusBar.showMessage(f"Система координат переключена на {COORD_SYSTEMS[mode].lower()}")
 
-        # Показать окно с информацией о выбранной системе координат
         if mode == 'cartesian':
             QMessageBox.information(self, "Система координат ввода", "Ввод координат будет производиться в Декартовой системе.")
         else:
@@ -647,21 +609,18 @@ class MainWindow(QMainWindow):
         """
         Показывает диалог выбора стандартной толщины линии согласно ISO
         """
-        # Стандартные значения толщины линий по ISO в мм
         standard_thicknesses = [
-            0.00, 0.05, 0.09,  # Очень тонкие
-            0.13, 0.15, 0.18, 0.20, 0.25,  # Тонкие
-            0.30, 0.35, 0.40, 0.50,  # Средние
-            0.70,  # Толстые
-            1.00   # Очень толстые
+            0.00, 0.05, 0.09,
+            0.13, 0.15, 0.18, 0.20, 0.25,
+            0.30, 0.35, 0.40, 0.50,
+            0.70,
+            1.00
         ]
         
-        # Находим ближайшее стандартное значение к текущей толщине
         current_thickness = self.canvas.lineThickness
         closest_thickness = min(standard_thicknesses, key=lambda x: abs(x - current_thickness))
         current_index = standard_thicknesses.index(closest_thickness)
         
-        # Создаем описательные метки для каждой толщины
         thickness_labels = []
         for t in standard_thicknesses:
             if t <= 0.09:
@@ -676,7 +635,6 @@ class MainWindow(QMainWindow):
                 category = "Очень толстая"
             thickness_labels.append(f"{t:.2f} мм ({category})")
         
-        # Показываем диалог выбора толщины
         thickness, ok = QInputDialog.getItem(
             self, 
             "Толщина линии", 
@@ -687,7 +645,6 @@ class MainWindow(QMainWindow):
         )
         
         if ok:
-            # Извлекаем значение толщины из выбранной метки
             selected_thickness = float(thickness.split()[0])
             self.canvas.lineThickness = selected_thickness
             self.statusBar.showMessage(f"Толщина линии установлена: {selected_thickness} мм")
@@ -700,30 +657,22 @@ class MainWindow(QMainWindow):
         self.canvas.rotate(-10)
         self.statusBar.showMessage("Поворот по часовой стрелке")
 
-    # New file handling methods
     def newFile(self):
-        # Check if there are unsaved changes
         if self.canvas.shapes and self.confirmSaveChanges():
-            # Save current file if user wants to
             self.saveFile()
             
-        # Clear canvas
         self.canvas.shapes.clear()
         self.canvas.update()
         self.constructionTree.updateConstructionTree()
         
-        # Reset current file
         self.current_file = None
         self.fileNameLabel.setText("Новый файл")
         self.statusBar.showMessage("Создан новый файл")
     
     def openDxfFile(self):
-        # Check if there are unsaved changes
         if self.canvas.shapes and self.confirmSaveChanges():
-            # Save current file if user wants to
             self.saveFile()
         
-        # Open file dialog
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getOpenFileName(
             self, 
@@ -735,19 +684,15 @@ class MainWindow(QMainWindow):
         
         if filename:
             try:
-                # Clear current shapes
                 self.canvas.shapes.clear()
                 
-                # Load shapes from DXF file
                 loaded_shapes = read_from_dxf(filename, self.canvas)
                 
-                # Add loaded shapes to canvas
                 if loaded_shapes:
                     self.canvas.shapes.extend(loaded_shapes)
                     self.canvas.update()
                     self.constructionTree.updateConstructionTree()
                     
-                    # Update current file
                     self.current_file = filename
                     self.fileNameLabel.setText(f"Файл: {self.getFileNameFromPath(filename)}")
                     self.statusBar.showMessage(f"Загружен файл: {filename}")
@@ -757,11 +702,9 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Ошибка загрузки", f"Произошла ошибка при загрузке файла:\n{str(e)}")
     
     def saveFile(self):
-        # If no current file, use save as
         if not self.current_file:
             return self.saveFileAs()
         
-        # Save to current file
         try:
             success = save_to_dxf_advanced(self.canvas.shapes, self.current_file)  # Используем advanced версию
             if success:
@@ -775,7 +718,6 @@ class MainWindow(QMainWindow):
             return False
     
     def saveFileAs(self):
-        # Open file dialog
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getSaveFileName(
             self, 
@@ -786,13 +728,11 @@ class MainWindow(QMainWindow):
         )
         
         if filename:
-            # Add .dxf extension if not present
             if not filename.lower().endswith('.dxf'):
                 filename += '.dxf'
                 
-            # Save to file
             try:
-                success = save_to_dxf_advanced(self.canvas.shapes, filename)  # Используем advanced версию
+                success = save_to_dxf_advanced(self.canvas.shapes, filename)
                 if success:
                     self.current_file = filename
                     self.fileNameLabel.setText(f"Файл: {self.getFileNameFromPath(filename)}")
@@ -821,7 +761,7 @@ class MainWindow(QMainWindow):
             return True
         elif reply == QMessageBox.Discard:
             return False
-        else:  # Cancel
+        else:
             return None
     
     def getFileNameFromPath(self, path):
@@ -835,7 +775,6 @@ class MainWindow(QMainWindow):
             if self.saveFile():
                 event.accept()
             else:
-                # If save failed, ask if they want to quit anyway
                 reply = QMessageBox.question(
                     self, 
                     "Ошибка сохранения", 

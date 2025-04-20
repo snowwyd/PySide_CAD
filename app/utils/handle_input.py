@@ -38,7 +38,6 @@ def handle_manual_input(self):
             if not ok:
                 return
             else:
-                # Задаём точку радиуса на угле 0 градусов
                 x = self.centerPoint.x() + radius
                 y = self.centerPoint.y()
                 self.radius_point = QPointF(x, y)
@@ -81,7 +80,6 @@ def handle_manual_input(self):
 
     elif self.drawingMode == 'line':
         if len(self.points) == 0:
-                    # Первая точка всегда в декартовых координатах
                     prompt_text = "Введите координаты начальной точки X Y через пробел:"
                     coord_str, ok = QInputDialog.getText(self, "Ввод координат", prompt_text)
                     if not ok:
@@ -353,7 +351,6 @@ def handle_manual_input(self):
                 self.centerPoint = None
                 return
             else:
-                # Задаем точку радиуса под углом 0 градусов
                 x = self.centerPoint.x() + radius
                 y = self.centerPoint.y()
                 self.radius_point = QPointF(x, y)
@@ -393,7 +390,6 @@ def handle_manual_input(self):
             self.update()
 
     elif self.drawingMode == 'polygon':
-        # Ввод точек до тех пор, пока пользователь не отменит или не оставит поле пустым
         while True:
             if self.inputCoordinateSystem == 'cartesian':
                 prompt_text = "Введите координаты вершины X Y через пробел:"
@@ -457,8 +453,6 @@ def handle_manual_input(self):
             self.centerPoint = None
             self.numSides = 0
             return
-        # Need a point at specified distance (radius) from center
-        # Let's pick an angle of 0
         angle = 0
         x = self.centerPoint.x() + radius * math.cos(angle)
         y = self.centerPoint.y() + radius * math.sin(angle)
@@ -475,7 +469,6 @@ def handle_manual_input(self):
         self.update()
 
     elif self.drawingMode == 'spline_bezier' or self.drawingMode == 'spline_segments':
-        # Ввод точек до тех пор, пока пользователь не отменит или не оставит поле пустым
         while True:
             if self.inputCoordinateSystem == 'cartesian':
                 prompt_text = "Введите координаты точки X Y через пробел:"

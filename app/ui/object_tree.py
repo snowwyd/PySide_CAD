@@ -21,11 +21,9 @@ class ConstructionTree(QDockWidget):
         self.canvas = canvas
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         
-        # Создаем основной виджет
         self.main_widget = QWidget()
         self.main_layout = QVBoxLayout(self.main_widget)
         
-        # Создаем заголовок
         header_widget = QWidget()
         header_layout = QHBoxLayout(header_widget)
         
@@ -33,7 +31,6 @@ class ConstructionTree(QDockWidget):
         title_label.setFont(QFont("Arial", 12, QFont.Bold))
         header_layout.addWidget(title_label)
         
-        # Добавляем кнопки управления
         self.buttons_widget = QWidget()
         buttons_layout = QHBoxLayout(self.buttons_widget)
         
@@ -45,20 +42,17 @@ class ConstructionTree(QDockWidget):
         buttons_layout.addWidget(expand_btn)
         buttons_layout.addWidget(collapse_btn)
         
-        # Настраиваем дерево объектов
         self.treeWidget = QTreeWidget()
         self.treeWidget.setHeaderHidden(True)
         self.treeWidget.setAlternatingRowColors(True)
         self.treeWidget.setFont(QFont("Arial", 10))
         
-        # Собираем layout
         self.main_layout.addWidget(header_widget)
         self.main_layout.addWidget(self.buttons_widget)
         self.main_layout.addWidget(self.treeWidget)
         
         self.setWidget(self.main_widget)
         
-        # Подключаем сигналы
         self.canvas.shapeAdded.connect(self.updateConstructionTree)
         self.canvas.shapeRemoved.connect(self.updateConstructionTree)
         self.canvas.zPressed.connect(self.updateConstructionTree)
@@ -67,7 +61,6 @@ class ConstructionTree(QDockWidget):
         self.treeWidget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.onTreeContextMenu)
         
-        # Инициализируем стили в зависимости от текущей темы приложения
         is_dark_theme = parent.is_dark_theme if hasattr(parent, 'is_dark_theme') else False
         self.updateThemeStyles(is_dark_theme)
         
@@ -75,7 +68,6 @@ class ConstructionTree(QDockWidget):
 
     def updateThemeStyles(self, is_dark_theme):
         if is_dark_theme:
-            # Стили для темной темы
             self.setStyleSheet("""
                 QTreeWidget {
                     background-color: #1e1e1e;
@@ -94,7 +86,6 @@ class ConstructionTree(QDockWidget):
                 }
             """)
         else:
-            # Стили для светлой темы
             self.setStyleSheet("""
                 QTreeWidget {
                     border: 1px solid #cccccc;
@@ -123,10 +114,8 @@ class ConstructionTree(QDockWidget):
             """)
 
     def saveExpandState(self):
-        """Сохраняет состояние развернутых элементов"""
         expanded_states = {}
         
-        # Сначала сохраняем состояния существующих элементов
         iterator = QTreeWidgetItemIterator(self.treeWidget)
         while iterator.value():
             item = iterator.value()
@@ -135,28 +124,23 @@ class ConstructionTree(QDockWidget):
         return expanded_states
 
     def restoreExpandState(self, expanded_states):
-        """Восстанавливает состояние развернутых элементов"""
-        if not expanded_states:  # Если нет сохраненных состояний
+        if not expanded_states:
             return
             
         iterator = QTreeWidgetItemIterator(self.treeWidget)
         while iterator.value():
             item = iterator.value()
-            # Если элемент существовал ранее, восстанавливаем его состояние
             if item.text(0) in expanded_states:
                 item.setExpanded(expanded_states[item.text(0)])
             else:
-                # Новые элементы оставляем свернутыми
                 item.setExpanded(False)
             iterator += 1
 
     def updateConstructionTree(self):
-        # Сохраняем состояние раскрытых элементов
         expanded_states = self.saveExpandState()
 
         self.treeWidget.clear()
         
-        # Словарь соответствия английских названий русским
         shape_names = {
             'Line': 'Линия',
             'Circle': 'Окружность',
@@ -169,20 +153,18 @@ class ConstructionTree(QDockWidget):
             'SegmentSpline': 'Сегментная кривая'
         }
 
-        # Словарь с цветами для разных типов фигур
         shape_colors = {
-            'Line': '#2196F3',           # Синий
-            'Circle': '#4CAF50',         # Зеленый
-            'Rectangle': '#FFC107',      # Желтый
-            'Polygon': '#9C27B0',        # Фиолетовый
-            'CircleByThreePoints': '#4CAF50',  # Зеленый
-            'ArcByThreePoints': '#FF5722',     # Оранжевый
-            'ArcByRadiusChord': '#FF5722',     # Оранжевый
-            'BezierSpline': '#E91E63',         # Розовый
-            'SegmentSpline': '#E91E63'         # Розовый
+            'Line': '#2196F3',
+            'Circle': '#4CAF50',
+            'Rectangle': '#FFC107',
+            'Polygon': '#9C27B0',
+            'CircleByThreePoints': '#4CAF50',
+            'ArcByThreePoints': '#FF5722',
+            'ArcByRadiusChord': '#FF5722',
+            'BezierSpline': '#E91E63',
+            'SegmentSpline': '#E91E63'
         }
         
-        # Словарь соответствия типов линий русским названиям
         line_type_names = {
             'solid': 'Сплошная',
             'dash': 'Штриховая',
@@ -190,79 +172,64 @@ class ConstructionTree(QDockWidget):
             'dash_dot_dot': 'Штрих-пунктирная с двумя точками'
         }
         
-        # Проверяем текущую тему
         is_dark_theme = self.parent.is_dark_theme if hasattr(self.parent, 'is_dark_theme') else False
         
-        # Добавляем фигуры в дерево
         for index, shape in enumerate(self.canvas.shapes):
             shape_type = type(shape).__name__
-            # Используем русское название из словаря
             shape_name = shape_names.get(shape_type, shape_type)
             item_text = f"{index + 1}: {shape_name}"
             
-            # Создаем основной элемент
             tree_item = QTreeWidgetItem([item_text])
             tree_item.setData(0, Qt.UserRole, {'index': index})
             
-            # Устанавливаем цвет и стиль для элемента
             color = QColor(shape_colors.get(shape_type, '#757575'))
             
-            # Устанавливаем цвет текста в зависимости от темы
             if is_dark_theme:
-                tree_item.setForeground(0, QColor('#ffffff'))  # Белый текст для темной темы
+                tree_item.setForeground(0, QColor('#ffffff'))
             else:
-                tree_item.setForeground(0, color)  # Цветной текст для светлой темы
+                tree_item.setForeground(0, color)
                 
             font = QFont("Arial", 10, QFont.Bold)
             tree_item.setFont(0, font)
             
-            # Выделение элемента, если он соответствует выделенному на холсте
             if index == self.canvas.highlighted_shape_index:
                 self.treeWidget.setCurrentItem(tree_item)
             
             self.treeWidget.addTopLevelItem(tree_item)
 
-            # Функция для создания дочернего элемента с форматированием
             def create_child_item(parent, text, index=None, property_name=None, is_editable=True):
                 item = QTreeWidgetItem([text])
                 if is_editable and index is not None:
                     item.setData(0, Qt.UserRole, {'index': index, 'property': property_name})
                     item.setFlags(item.flags() | Qt.ItemIsEditable)
                 parent.addChild(item)
-                # Устанавливаем обычный шрифт для дочерних элементов
                 item.setFont(0, QFont("Arial", 9))
                 if is_dark_theme:
-                    item.setForeground(0, QColor('#ffffff'))  # Белый текст для темной темы
+                    item.setForeground(0, QColor('#ffffff'))
                 return item
             
-            # Добавляем информацию о стиле линии
             if hasattr(shape, 'line_type'):
                 line_type_text = line_type_names.get(shape.line_type, shape.line_type)
                 create_child_item(tree_item,
                     f"Тип линии: {line_type_text}",
                     index, 'line_type')
             
-            # Добавляем информацию о толщине линии
             if hasattr(shape, 'line_thickness'):
                 create_child_item(tree_item,
                     f"Толщина линии: {shape.line_thickness:.2f}",
                     index, 'line_thickness')
             
-            # Добавляем информацию о цвете линии
             if hasattr(shape, 'color') and shape.color:
                 color_item = create_child_item(tree_item,
                     f"Цвет: {shape.color.name()}",
                     index, 'color')
                 
-                # Создаем небольшой цветной индикатор
                 color_brush = QBrush(shape.color)
                 color_item.setBackground(0, color_brush)
                 
-                # Если цвет темный, сделаем текст белым
                 if shape.color.red() + shape.color.green() + shape.color.blue() < 380:
                     color_item.setForeground(0, QColor(255, 255, 255))
 
-            # Добавляем информацию в зависимости от типа фигуры
             if isinstance(shape, Line):
                 create_child_item(tree_item, 
                     f"Начало: ({shape.start_point.x():.2f}, {shape.start_point.y():.2f})",
@@ -363,29 +330,21 @@ class ConstructionTree(QDockWidget):
             else:
                 create_child_item(tree_item, "Нет дополнительной информации", is_editable=False)
 
-        # Восстанавливаем состояние элементов
         if len(self.canvas.shapes) == 1 and not expanded_states:
-            # Только если это действительно первый элемент
             self.treeWidget.expandAll()
         else:
-            # Иначе восстанавливаем сохраненное состояние
             self.restoreExpandState(expanded_states)
 
     def onTreeItemClicked(self, item):
         data = item.data(0, Qt.UserRole)
         if data is not None and 'index' in data:
             index = data['index']
-            # Проверяем, что индекс в пределах списка фигур
             if 0 <= index < len(self.canvas.shapes):
-                # Прямая установка индекса выделенной фигуры
                 self.canvas.highlighted_shape_index = index
-                # Принудительная перерисовка холста
                 self.canvas.repaint()
                 
-                # Также обновляем статусную строку
                 shape = self.canvas.shapes[index]
                 shape_type = type(shape).__name__
-                # Словарь соответствия английских названий русским
                 shape_names = {
                     'Line': 'Линия',
                     'Circle': 'Окружность',
@@ -427,7 +386,6 @@ class ConstructionTree(QDockWidget):
                 rotate_action = QAction('Повернуть', self)
                 rotate_action.triggered.connect(lambda checked=False, i=item: self.rotateShape(i))
                 
-                # Добавляем пункты для изменения цвета и толщины
                 color_action = QAction('Изменить цвет', self)
                 color_action.triggered.connect(lambda checked=False, i=item: self.changeShapeColor(i))
                 thickness_action = QAction('Изменить толщину', self)
@@ -449,26 +407,19 @@ class ConstructionTree(QDockWidget):
             if 0 <= index < len(self.canvas.shapes):
                 shape = self.canvas.shapes[index]
                 
-                # Вызываем метод выбора цвета из главного окна
                 if hasattr(self.parent, 'chooseColor'):
-                    # Сохраняем текущий цвет
                     previous_color = self.parent.canvas.currentColor
                     
-                    # Устанавливаем текущий цвет фигуры как активный
                     if hasattr(shape, 'color') and shape.color:
                         self.parent.canvas.currentColor = shape.color
                     
-                    # Вызываем диалог выбора цвета
                     self.parent.chooseColor()
                     
-                    # Устанавливаем выбранный цвет для фигуры
                     if hasattr(shape, 'color'):
                         shape.color = self.parent.canvas.currentColor
                     
-                    # Возвращаем предыдущий цвет как текущий
                     self.parent.canvas.currentColor = previous_color
                     
-                    # Обновляем отображение
                     self.canvas.update()
                     self.updateConstructionTree()
 
@@ -501,43 +452,37 @@ class ConstructionTree(QDockWidget):
             if 0 <= index < len(self.canvas.shapes):
                 shape = self.canvas.shapes[index]
                 
-                # Запрашиваем угол поворота
                 angle, ok = QInputDialog.getDouble(
                     self, 
                     "Поворот фигуры",
                     "Введите угол поворота в градусах\n(положительный - против часовой стрелки):",
-                    0,  # value
-                    -360,  # minValue
-                    360,   # maxValue
-                    1      # decimals
+                    0,
+                    -360,
+                    360,
+                    1
                 )
                 if not ok:
                     return
                     
-                # Определяем центр поворота
                 if hasattr(shape, 'center'):
                     center = shape.center
                 elif hasattr(shape, 'points') and shape.points:
-                    # Для многоугольников и сплайнов используем центр масс
                     x_sum = sum(p.x() for p in shape.points)
                     y_sum = sum(p.y() for p in shape.points)
                     center = QPointF(x_sum / len(shape.points), y_sum / len(shape.points))
                 elif hasattr(shape, 'start_point') and hasattr(shape, 'end_point'):
-                    # Для линий используем середину
                     center = QPointF(
                         (shape.start_point.x() + shape.end_point.x()) / 2,
                         (shape.start_point.y() + shape.end_point.y()) / 2
                     )
                 elif hasattr(shape, 'rect'):
-                    # Для прямоугольников используем центр
                     center = shape.rect.center()
                 else:
                     return
                     
-                # Выполняем поворот
                 shape.rotate_around_point(angle, center)
-                self.canvas.update()  # Обеспечиваем перерисовку Canvas
-                self.updateConstructionTree()  # Обновляем дерево объектов
+                self.canvas.update()
+                self.updateConstructionTree()
 
     def editShape(self, item):
         data = item.data(0, Qt.UserRole)
@@ -545,9 +490,8 @@ class ConstructionTree(QDockWidget):
             index = data['index']
             if 0 <= index < len(self.canvas.shapes):
                 shape = self.canvas.shapes[index]
-                # First, allow editing general properties
                 self.editGeneralShapeProperties(shape)
-                # Then, call the specific editing method
+                # TODO: wtf?
                 if isinstance(shape, Line):
                     self.editLineShape(shape)
                 elif isinstance(shape, Circle):
@@ -568,7 +512,6 @@ class ConstructionTree(QDockWidget):
                     self.editSegmentSplineShape(shape)
                 else:
                     QMessageBox.information(self, "Редактировать", "Редактирование этого типа фигур не поддерживается.")
-                # Update canvas and tree
                 self.canvas.update()
                 self.updateConstructionTree()
 
@@ -577,7 +520,7 @@ class ConstructionTree(QDockWidget):
         if data is not None and 'index' in data:
             index = data['index']
             if 0 <= index < len(self.canvas.shapes):
-                item_text = item.text(0)  # Сохраняем текст элемента
+                item_text = item.text(0)
                 del self.canvas.shapes[index]
                 self.canvas.highlighted_shape_index = None
                 self.canvas.shapeRemoved.emit()
@@ -585,7 +528,6 @@ class ConstructionTree(QDockWidget):
                 self.parent.statusBar.showMessage(f"Удален объект: {item_text}")
 
     def editGeneralShapeProperties(self, shape):
-        # Edit line type
         line_types = ['Сплошная', 'Штриховая', 'Штрих-пунктирная', 'Штрих-пунктирная с двумя точками']
         line_type_keys = ['solid', 'dash', 'dash_dot', 'dash_dot_dot']
         current_line_type_index = line_type_keys.index(shape.line_type)
@@ -612,25 +554,20 @@ class ConstructionTree(QDockWidget):
                 shape.line_thickness = thickness
         
         elif property_name == 'color':
-            # Вызываем диалог выбора цвета из главного окна
             if hasattr(self.parent, 'chooseColor'):
-                # Сохраняем текущий цвет
                 previous_color = self.parent.canvas.currentColor
                 
-                # Устанавливаем текущий цвет фигуры как активный
                 if hasattr(shape, 'color') and shape.color:
                     self.parent.canvas.currentColor = shape.color
                 
-                # Вызываем диалог выбора цвета
                 self.parent.chooseColor()
                 
-                # Устанавливаем выбранный цвет для фигуры
                 if hasattr(shape, 'color'):
                     shape.color = self.parent.canvas.currentColor
                 
-                # Возвращаем предыдущий цвет как текущий
                 self.parent.canvas.currentColor = previous_color
         
+        # TODO: wtf?
         elif isinstance(shape, Line):
             self.editLineShapeProperty(shape, property_name)
         elif isinstance(shape, Circle):
@@ -652,7 +589,6 @@ class ConstructionTree(QDockWidget):
         else:
             QMessageBox.information(self, "Редактировать", "Редактирование этого типа фигур не поддерживается.")
 
-    # Line properties
     def editLineShapeProperty(self, shape, property_name):
         if property_name == 'start_point':
             x, ok1 = QInputDialog.getDouble(self, "Редактировать начало линии", "Начало X:", value=shape.start_point.x())
@@ -671,7 +607,6 @@ class ConstructionTree(QDockWidget):
                 return
             shape.end_point = QPointF(x, y)
 
-    # Circle properties
     def editCircleShapeProperty(self, shape, property_name):
         if property_name == 'center':
             x, ok1 = QInputDialog.getDouble(self, "Редактировать центр окружности", "Центр X:", value=shape.center.x())
@@ -687,7 +622,6 @@ class ConstructionTree(QDockWidget):
                 return
             shape.radius = radius
 
-    # Rectangle properties
     def editRectangleShapeProperty(self, shape, property_name):
         rect = shape.rect
         if property_name == 'top_left':
@@ -712,7 +646,6 @@ class ConstructionTree(QDockWidget):
             rect.setHeight(height)
             shape.rect = rect
 
-    # Polygon properties
     def editPolygonShapeProperty(self, shape, property_name):
         if property_name.startswith('point_'):
             try:
@@ -731,7 +664,6 @@ class ConstructionTree(QDockWidget):
                     return
                 shape.points[point_index] = QPointF(x, y)
 
-    # CircleByThreePoints properties
     def editCircleByThreePointsShapeProperty(self, shape, property_name):
         if property_name.startswith('point_'):
             try:
@@ -750,7 +682,6 @@ class ConstructionTree(QDockWidget):
                     return
                 shape.points[point_index] = QPointF(x, y)
 
-    # ArcByThreePoints properties
     def editArcByThreePointsShapeProperty(self, shape, property_name):
         if property_name.startswith('point_'):
             try:
@@ -769,7 +700,6 @@ class ConstructionTree(QDockWidget):
                     return
                 shape.points[point_index] = QPointF(x, y)
 
-    # ArcByRadiusChord properties
     def editArcByRadiusChordShapeProperty(self, shape, property_name):
         if property_name == 'center':
             x, ok1 = QInputDialog.getDouble(
@@ -802,7 +732,6 @@ class ConstructionTree(QDockWidget):
                 return
             shape.chord_point = QPointF(x, y)
 
-    # BezierSpline properties
     def editBezierSplineShapeProperty(self, shape, property_name):
         if property_name.startswith('control_point_'):
             try:
@@ -821,7 +750,6 @@ class ConstructionTree(QDockWidget):
                     return
                 shape.points[point_index] = QPointF(x, y)
 
-    # SegmentSpline properties
     def editSegmentSplineShapeProperty(self, shape, property_name):
         if property_name.startswith('point_'):
             try:
@@ -840,23 +768,19 @@ class ConstructionTree(QDockWidget):
                     return
                 shape.points[point_index] = QPointF(x, y)
 
-    # Implement editShape methods for shape-specific editing
     def editLineShape(self, shape):
-        # Edit start point
         start_x, ok1 = QInputDialog.getDouble(self, "Редактировать линию", "Начало X:", value=shape.start_point.x())
         if not ok1:
             return
         start_y, ok2 = QInputDialog.getDouble(self, "Редактировать линию", "Начало Y:", value=shape.start_point.y())
         if not ok2:
             return
-        # Edit end point
         end_x, ok3 = QInputDialog.getDouble(self, "Редактировать линию", "Конец X:", value=shape.end_point.x())
         if not ok3:
             return
         end_y, ok4 = QInputDialog.getDouble(self, "Редактировать линию", "Конец Y:", value=shape.end_point.y())
         if not ok4:
             return
-        # Update shape
         shape.start_point = QPointF(start_x, start_y)
         shape.end_point = QPointF(end_x, end_y)
 
@@ -870,7 +794,6 @@ class ConstructionTree(QDockWidget):
         radius, ok3 = QInputDialog.getDouble(self, "Редактировать окружность", "Радиус:", value=shape.radius, minValue=0.1)
         if not ok3:
             return
-        # Update shape
         shape.center = QPointF(center_x, center_y)
         shape.radius = radius
 
@@ -888,7 +811,6 @@ class ConstructionTree(QDockWidget):
         height, ok4 = QInputDialog.getDouble(self, "Редактировать прямоугольник", "Высота:", value=rect.height())
         if not ok4:
             return
-        # Update rect
         shape.rect = QRectF(QPointF(top_left_x, top_left_y), QSizeF(width, height))
 
     def editPolygonShape(self, shape):
@@ -908,7 +830,6 @@ class ConstructionTree(QDockWidget):
                 return
 
     def editCircleByThreePointsShape(self, shape):
-        # Allow editing all three points
         for i in range(3):
             point = shape.points[i]
             x, ok1 = QInputDialog.getDouble(self, f"Редактировать Точку {i + 1}", "X:", value=point.x())
@@ -920,7 +841,6 @@ class ConstructionTree(QDockWidget):
             shape.points[i] = QPointF(x, y)
 
     def editArcByThreePointsShape(self, shape):
-        # Allow editing all three points
         for i in range(3):
             point = shape.points[i]
             x, ok1 = QInputDialog.getDouble(self, f"Редактировать Точку {i + 1}", "X:", value=point.x())
@@ -932,13 +852,11 @@ class ConstructionTree(QDockWidget):
             shape.points[i] = QPointF(x, y)
 
     def editArcByRadiusChordShape(self, shape):
-        # Allow editing center, radius_point, and chord_point
         self.editArcByRadiusChordShapeProperty(shape, 'center')
         self.editArcByRadiusChordShapeProperty(shape, 'radius_point')
         self.editArcByRadiusChordShapeProperty(shape, 'chord_point')
 
     def editBezierSplineShape(self, shape):
-        # Allow editing all control points
         for i in range(len(shape.points)):
             point = shape.points[i]
             x, ok1 = QInputDialog.getDouble(
@@ -952,7 +870,6 @@ class ConstructionTree(QDockWidget):
             shape.points[i] = QPointF(x, y)
 
     def editSegmentSplineShape(self, shape):
-        # Allow editing all points
         for i in range(len(shape.points)):
             point = shape.points[i]
             x, ok1 = QInputDialog.getDouble(

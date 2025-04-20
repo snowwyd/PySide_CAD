@@ -4,7 +4,6 @@ import math
 from PySide6.QtCore import QPointF
 from PySide6.QtCore import QRectF
 
-# Базовый класс для всех фигур
 class Geometry:
     def __init__(self, line_type='solid', line_thickness=1.0, dash_parameters=None, dash_auto_mode=False, color=None):
         self.line_type = line_type
@@ -12,7 +11,7 @@ class Geometry:
         self.dash_parameters = dash_parameters or {}
         self.dash_auto_mode = dash_auto_mode
         self.is_closed = False
-        self.color = color or QColor(0, 0, 0)  # Добавляем цвет, по умолчанию черный
+        self.color = color or QColor(0, 0, 0)
 
     def rotate_around_point(self, angle_degrees, center_point):
         """Поворачивает фигуру вокруг заданной точки"""
@@ -27,7 +26,6 @@ class Geometry:
             new_y = center_point.y() + dx * sin_a + dy * cos_a
             return QPointF(new_x, new_y)
 
-        # Для каждого типа фигуры своя реализация поворота
         if hasattr(self, 'points'):
             self.points = [rotate_point(p) for p in self.points]
         if hasattr(self, 'start_point'):
@@ -41,7 +39,6 @@ class Geometry:
         if hasattr(self, 'chord_point'):
             self.chord_point = rotate_point(self.chord_point)
         if hasattr(self, 'rect'):
-            # Для прямоугольника поворачиваем все углы
             topleft = rotate_point(self.rect.topLeft())
             bottomright = rotate_point(self.rect.bottomRight())
             self.rect = QRectF(topleft, bottomright)
@@ -51,7 +48,7 @@ class Geometry:
 
     def create_pen(self):
         pen = QPen()
-        pen.setColor(self.color)  # Используем цвет фигуры
+        pen.setColor(self.color) 
         pen.setWidthF(self.line_thickness)
         pen.setCosmetic(False)
         pen.setCapStyle(Qt.FlatCap)
@@ -68,7 +65,7 @@ class Geometry:
 
     def _compute_dash_pattern(self):
         if self.dash_auto_mode:
-            total_length = self.get_total_length() or 1  # Избегаем деления на ноль
+            total_length = self.get_total_length() or 1
             return self._generate_auto_dash_pattern(total_length)
         return self._generate_custom_dash_pattern()
 
@@ -82,7 +79,7 @@ class Geometry:
         return self._compute_scaled_pattern(total_length, ratio_map.get(self.line_type, [4, 2, 0]))
 
     def _generate_closed_pattern(self, total_length):
-        N = 10  # Количество повторений паттерна
+        N = 10
         pattern_length = total_length / N
         dash_length = 0.6 * pattern_length
         gap_length = pattern_length - dash_length

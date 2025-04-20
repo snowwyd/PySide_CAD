@@ -10,17 +10,9 @@ from app.core.rectangle import Rectangle
 from app.core.spline import BezierSpline, SegmentSpline
 
 def save_to_dxf(shapes, filename):
-    """
-    Saves the given shapes to a DXF file in R12 format for better LibreCAD compatibility.
-    
-    Args:
-        shapes: List of geometry objects
-        filename: Path to save the DXF file
-    """
     doc = ezdxf.new('R12')
     msp = doc.modelspace()
     
-    # Create layers for different line thicknesses
     thickness_layers = {}
     for shape in shapes:
         if hasattr(shape, 'line_thickness') and shape.line_thickness > 0:
@@ -28,16 +20,14 @@ def save_to_dxf(shapes, filename):
             if thickness not in thickness_layers:
                 layer_name = f"Thickness_{thickness}"
                 layer = doc.layers.add(layer_name)
-                layer.lineweight = thickness * 100  # Convert to 100ths of mm
+                layer.lineweight = thickness * 100
                 thickness_layers[thickness] = layer_name
     
-    # Ensure necessary line types exist
     ensure_line_types_exist(doc)
     
     for shape in shapes:
         dxfattribs = get_dxf_attributes(shape)
         
-        # Assign layer based on thickness
         if hasattr(shape, 'line_thickness') and shape.line_thickness > 0:
             thickness = shape.line_thickness
             dxfattribs['layer'] = thickness_layers.get(thickness, '0')
@@ -71,7 +61,6 @@ def save_to_dxf(shapes, filename):
                 start_angle_deg = start_angle % 360
                 span_angle = span_angle % 360 if span_angle >= 0 else (span_angle % 360) + 360
                 end_angle_deg = (start_angle_deg + span_angle) % 360
-                # Убедимся, что дуга идёт против часовой стрелки
                 if end_angle_deg < start_angle_deg:
                     end_angle_deg += 360
                 msp.add_arc(
@@ -116,7 +105,7 @@ def save_to_dxf(shapes, filename):
                 
         elif isinstance(shape, BezierSpline):
             if len(shape.points) >= 2:
-                t_values = [i / 100 for i in range(101)]  # Increase points for accuracy
+                t_values = [i / 100 for i in range(101)]
                 polyline_points = []
                 for t in t_values:
                     point = shape.bezier_point(t)
@@ -133,18 +122,10 @@ def save_to_dxf(shapes, filename):
     return True
 
 def save_to_dxf_advanced(shapes, filename):
-    """
-    Saves the given shapes to a DXF file using R2000 format for better properties support.
-    
-    Args:
-        shapes: List of geometry objects
-        filename: Path to save the DXF file
-    """
     doc = ezdxf.new('R2000')
     doc.header["$LWDISPLAY"] = 1
     msp = doc.modelspace()
     
-    # Ensure necessary line types exist
     ensure_line_types_exist(doc)
     
     for shape in shapes:
@@ -179,7 +160,6 @@ def save_to_dxf_advanced(shapes, filename):
                 start_angle_deg = start_angle % 360
                 span_angle = span_angle % 360 if span_angle >= 0 else (span_angle % 360) + 360
                 end_angle_deg = (start_angle_deg + span_angle) % 360
-                # Убедимся, что дуга идёт против часовой стрелки
                 if end_angle_deg < start_angle_deg:
                     end_angle_deg += 360
                 msp.add_arc(
@@ -238,12 +218,6 @@ def save_to_dxf_advanced(shapes, filename):
     return True
 
 def ensure_line_types_exist(doc):
-    """
-    Ensure necessary line types exist in the DXF document.
-    
-    Args:
-        doc: DXF document
-    """
     linetypes = doc.linetypes
     if 'DASHED' not in linetypes:
         linetypes.add('DASHED', pattern=[10.0, -5.0])
@@ -253,15 +227,6 @@ def ensure_line_types_exist(doc):
         linetypes.add('DASHDOT2', pattern=[10.0, -3.0, 0.0, -3.0, 0.0, -3.0])
 
 def get_dxf_attributes(shape):
-    """
-    Get DXF attributes for R12 format.
-    
-    Args:
-        shape: Geometry object
-        
-    Returns:
-        Dictionary of DXF attributes
-    """
     attributes = {}
     if hasattr(shape, 'color'):
         color_index = convert_qcolor_to_aci(shape.color)
@@ -280,15 +245,6 @@ def get_dxf_attributes(shape):
     return attributes
 
 def get_dxf_attributes_advanced(shape):
-    """
-    Get DXF attributes for R2000 format.
-    
-    Args:
-        shape: Geometry object
-        
-    Returns:
-        Dictionary of DXF attributes
-    """
     attributes = {'layer': '0'}
     if hasattr(shape, 'color'):
         color_index = convert_qcolor_to_aci(shape.color)
@@ -313,17 +269,8 @@ def get_dxf_attributes_advanced(shape):
     return attributes
 
 def convert_qcolor_to_aci(qcolor):
-    """
-    Convert QColor to AutoCAD Color Index (ACI).
-    
-    Args:
-        qcolor: QColor object
-        
-    Returns:
-        Integer representing the closest ACI
-    """
     if qcolor is None:
-        return 256  # ByLayer
+        return 256
     r, g, b = qcolor.red(), qcolor.green(), qcolor.blue()
     standard_colors = {
         (0, 0, 0): 0, (255, 0, 0): 1, (255, 255, 0): 2, (0, 255, 0): 3,
@@ -342,15 +289,6 @@ def convert_qcolor_to_aci(qcolor):
     return closest_index
 
 def convert_aci_to_qcolor(aci):
-    """
-    Convert ACI to QColor.
-    
-    Args:
-        aci: AutoCAD Color Index
-        
-    Returns:
-        QColor object
-    """
     basic_aci_to_rgb = {
         0: (0, 0, 0), 1: (255, 0, 0), 2: (255, 255, 0), 3: (0, 255, 0),
         4: (0, 255, 255), 5: (0, 0, 255), 6: (255, 0, 255), 7: (255, 255, 255),
@@ -360,16 +298,6 @@ def convert_aci_to_qcolor(aci):
     return QColor(r, g, b)
 
 def read_from_dxf(filename, canvas):
-    """
-    Read shapes from a DXF file and add them to the canvas.
-    
-    Args:
-        filename: Path to the DXF file
-        canvas: Canvas object to add shapes to
-        
-    Returns:
-        List of loaded shapes
-    """
     try:
         doc = ezdxf.readfile(filename)
         msp = doc.modelspace()
@@ -387,16 +315,6 @@ def read_from_dxf(filename, canvas):
         return []
 
 def convert_dxf_to_shape(entity, canvas):
-    """
-    Convert a DXF entity to the corresponding application geometry.
-    
-    Args:
-        entity: DXF entity object
-        canvas: Canvas object for attribute reference
-        
-    Returns:
-        Geometry object or None if conversion is not supported
-    """
     shape_attributes = extract_dxf_attributes(entity, canvas)
     
     if entity.dxftype() == 'LINE':
@@ -470,7 +388,6 @@ def convert_dxf_to_shape(entity, canvas):
     return None
 
 def is_rectangle(points, tolerance=1e-6):
-    """Check if 4 points form a rectangle with a tolerance for floating-point errors."""
     if len(points) != 4:
         return False
     for i in range(4):
@@ -485,16 +402,6 @@ def is_rectangle(points, tolerance=1e-6):
     return True
 
 def extract_dxf_attributes(entity, canvas):
-    """
-    Extract attributes from a DXF entity.
-    
-    Args:
-        entity: DXF entity object
-        canvas: Canvas object for default attributes
-        
-    Returns:
-        Dictionary of attributes
-    """
     attributes = {
         'line_type': 'solid',
         'line_thickness': canvas.lineThickness,

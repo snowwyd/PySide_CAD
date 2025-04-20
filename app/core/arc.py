@@ -37,16 +37,13 @@ class ArcByThreePoints(Geometry):
         mid_angle = math.degrees(math.atan2(B.y() - center.y(), B.x() - center.x()))
         end_angle = math.degrees(math.atan2(C.y() - center.y(), C.x() - center.x()))
 
-        # Нормализация углов
         start_angle = (start_angle + 360) % 360
         end_angle = (end_angle + 360) % 360
         mid_angle = (mid_angle + 360) % 360
 
-        # Вычисление span_angle с учётом направления (против часовой стрелки)
         span_angle = (end_angle - start_angle + 360) % 360
-        # Проверка направления через среднюю точку
         if (mid_angle - start_angle + 360) % 360 > span_angle:
-            span_angle = 360 - span_angle  # Дуга идёт через другую сторону
+            span_angle = 360 - span_angle
 
         return center, radius, start_angle, span_angle
 
@@ -79,7 +76,7 @@ class ArcByRadiusChord(Geometry):
         chord_length = math.hypot(self.chord_point.x() - self.radius_point.x(),
                                 self.chord_point.y() - self.radius_point.y())
         if chord_length > radius * math.sqrt(2) and span_angle < 180:
-            span_angle = 360 - span_angle  # Выбираем длинную дугу
+            span_angle = 360 - span_angle
         
         return radius, start_angle, span_angle
 
