@@ -4,12 +4,12 @@ from PySide6.QtWidgets import (QDockWidget, QTreeWidget, QTreeWidgetItem, QMenu,
 from PySide6.QtGui import QAction, QColor, QBrush
 from PySide6.QtCore import Qt, QPointF, QRectF, QSizeF
 from PySide6.QtGui import QFont  
-from app.core.line import Line
-from app.core.circle import Circle, CircleByThreePoints
-from app.core.arc import ArcByThreePoints, ArcByRadiusChord
-from app.core.polygon import Polygon
-from app.core.rectangle import Rectangle
-from app.core.spline import BezierSpline, SegmentSpline
+from app.core.shapes.line import Line
+from app.core.shapes.circle import Circle, CircleByThreePoints
+from app.core.shapes.arc import ArcByThreePoints, ArcByRadiusChord
+from app.core.shapes.polygon import Polygon
+from app.core.shapes.rectangle import Rectangle
+from app.core.shapes.spline import BezierSpline, SegmentSpline
 from PySide6.QtWidgets import QTreeWidgetItemIterator
 
 # TODO: имплементировать свою реализацию

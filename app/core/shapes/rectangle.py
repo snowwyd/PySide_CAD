@@ -1,4 +1,4 @@
-from app.core.base_geometry import Geometry
+from app.core.shapes.base_geometry import Geometry
 
 class Rectangle(Geometry):
     def __init__(self, rect, line_type='solid', line_thickness=1.0, 

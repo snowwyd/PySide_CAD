@@ -1,11 +1,11 @@
 import math
 from PySide6.QtWidgets import QInputDialog, QMessageBox
 from PySide6.QtCore import QPointF, QRectF, QSizeF
-from app.core.line import Line
-from app.core.circle import Circle, CircleByThreePoints
-from app.core.arc import ArcByThreePoints, ArcByRadiusChord
-from app.core.polygon import Polygon
-from app.core.rectangle import Rectangle
+from app.core.shapes.line import Line
+from app.core.shapes.circle import Circle, CircleByThreePoints
+from app.core.shapes.arc import ArcByThreePoints, ArcByRadiusChord
+from app.core.shapes.polygon import Polygon
+from app.core.shapes.rectangle import Rectangle
 
 def handle_manual_input(self):
     if self.drawingMode == 'arc_radius_chord':

@@ -1,5 +1,5 @@
 import math
-from app.core.base_geometry import Geometry
+from app.core.shapes.base_geometry import Geometry
 
 class Polygon(Geometry):
     def __init__(self, points, line_type='solid', line_thickness=1.0, 
