@@ -60,7 +60,7 @@ class Canvas(QWidget):
         self.highlighted_shape_index = None
         self.show_grid = True
         self.grid_size = GRID_SIZE
-        self.snap_grid = True
+        self.snap_grid = SNAP_GRID
 
     def create_pen(self):
         pen = QPen()
@@ -671,7 +671,9 @@ class Canvas(QWidget):
         top = max(corner.y() for corner in corners)
         bottom = min(corner.y() for corner in corners)
 
-        modified_size = self.grid_size * (10 ** round(-math.log10(self.scale)))
+        modified_size = self.grid_size * (
+            10 ** round(-math.log10(self.scale) - math.log10(self.grid_size) + 2)
+        )
 
         margin = modified_size * 2
         if 1000 / self.scale < self.canvas_limit:

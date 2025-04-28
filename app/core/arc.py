@@ -1,11 +1,21 @@
 import math
 from PySide6.QtCore import QRectF, QPointF
-from app.core.base_geometry import Geometry
+from app.core.parent import Geometry
+
 
 class ArcByThreePoints(Geometry):
-    def __init__(self, points, line_type='solid', line_thickness=1.0, 
-                 dash_parameters=None, dash_auto_mode=False, color=None):
-        super().__init__(line_type, line_thickness, dash_parameters, dash_auto_mode, color)
+    def __init__(
+        self,
+        points,
+        line_type="solid",
+        line_thickness=1.0,
+        dash_parameters=None,
+        dash_auto_mode=False,
+        color=None,
+    ):
+        super().__init__(
+            line_type, line_thickness, dash_parameters, dash_auto_mode, color
+        )
         self.points = points
 
     def draw(self, painter, pen=None):
@@ -26,11 +36,21 @@ class ArcByThreePoints(Geometry):
 
     def calculate_arc(self):
         A, B, C = self.points
-        D = 2 * (A.x() * (B.y() - C.y()) + B.x() * (C.y() - A.y()) + C.x() * (A.y() - B.y()))
+        D = 2 * (
+            A.x() * (B.y() - C.y()) + B.x() * (C.y() - A.y()) + C.x() * (A.y() - B.y())
+        )
         if D == 0:
             return None, None, None, None
-        Ux = ((A.x() ** 2 + A.y() ** 2) * (B.y() - C.y()) + (B.x() ** 2 + B.y() ** 2) * (C.y() - A.y()) + (C.x() ** 2 + C.y() ** 2) * (A.y() - B.y())) / D
-        Uy = ((A.x() ** 2 + A.y() ** 2) * (C.x() - B.x()) + (B.x() ** 2 + B.y() ** 2) * (A.x() - C.x()) + (C.x() ** 2 + C.y() ** 2) * (B.x() - A.x())) / D
+        Ux = (
+            (A.x() ** 2 + A.y() ** 2) * (B.y() - C.y())
+            + (B.x() ** 2 + B.y() ** 2) * (C.y() - A.y())
+            + (C.x() ** 2 + C.y() ** 2) * (A.y() - B.y())
+        ) / D
+        Uy = (
+            (A.x() ** 2 + A.y() ** 2) * (C.x() - B.x())
+            + (B.x() ** 2 + B.y() ** 2) * (A.x() - C.x())
+            + (C.x() ** 2 + C.y() ** 2) * (B.x() - A.x())
+        ) / D
         center = QPointF(Ux, Uy)
         radius = math.hypot(center.x() - A.x(), center.y() - A.y())
         start_angle = math.degrees(math.atan2(A.y() - center.y(), A.x() - center.x()))
@@ -47,10 +67,22 @@ class ArcByThreePoints(Geometry):
 
         return center, radius, start_angle, span_angle
 
+
 class ArcByRadiusChord(Geometry):
-    def __init__(self, center, radius_point, chord_point, line_type='solid', 
-                 line_thickness=1.0, dash_parameters=None, dash_auto_mode=False, color=None):
-        super().__init__(line_type, line_thickness, dash_parameters, dash_auto_mode, color)
+    def __init__(
+        self,
+        center,
+        radius_point,
+        chord_point,
+        line_type="solid",
+        line_thickness=1.0,
+        dash_parameters=None,
+        dash_auto_mode=False,
+        color=None,
+    ):
+        super().__init__(
+            line_type, line_thickness, dash_parameters, dash_auto_mode, color
+        )
         self.center = center
         self.radius_point = radius_point
         self.chord_point = chord_point
@@ -58,26 +90,40 @@ class ArcByRadiusChord(Geometry):
     def draw(self, painter, pen=None):
         super().draw(painter, pen)
         radius, start_angle, span_angle = self.calculate_arc()
-        rect = QRectF(self.center.x() - radius, self.center.y() - radius, 2 * radius, 2 * radius)
+        rect = QRectF(
+            self.center.x() - radius, self.center.y() - radius, 2 * radius, 2 * radius
+        )
         painter.drawArc(rect, int(-start_angle * 16), int(-span_angle * 16))
 
     def calculate_arc(self):
-        radius = math.hypot(self.radius_point.x() - self.center.x(), 
-                        self.radius_point.y() - self.center.y())
-        start_angle = math.degrees(math.atan2(self.radius_point.y() - self.center.y(), 
-                                            self.radius_point.x() - self.center.x()))
-        end_angle = math.degrees(math.atan2(self.chord_point.y() - self.center.y(), 
-                                        self.chord_point.x() - self.center.x()))
-        
+        radius = math.hypot(
+            self.radius_point.x() - self.center.x(),
+            self.radius_point.y() - self.center.y(),
+        )
+        start_angle = math.degrees(
+            math.atan2(
+                self.radius_point.y() - self.center.y(),
+                self.radius_point.x() - self.center.x(),
+            )
+        )
+        end_angle = math.degrees(
+            math.atan2(
+                self.chord_point.y() - self.center.y(),
+                self.chord_point.x() - self.center.x(),
+            )
+        )
+
         start_angle = (start_angle + 360) % 360
         end_angle = (end_angle + 360) % 360
-        
+
         span_angle = (end_angle - start_angle + 360) % 360
-        chord_length = math.hypot(self.chord_point.x() - self.radius_point.x(),
-                                self.chord_point.y() - self.radius_point.y())
+        chord_length = math.hypot(
+            self.chord_point.x() - self.radius_point.x(),
+            self.chord_point.y() - self.radius_point.y(),
+        )
         if chord_length > radius * math.sqrt(2) and span_angle < 180:
             span_angle = 360 - span_angle
-        
+
         return radius, start_angle, span_angle
 
     def get_total_length(self):

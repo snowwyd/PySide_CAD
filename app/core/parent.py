@@ -4,8 +4,16 @@ import math
 from PySide6.QtCore import QPointF
 from PySide6.QtCore import QRectF
 
+
 class Geometry:
-    def __init__(self, line_type='solid', line_thickness=1.0, dash_parameters=None, dash_auto_mode=False, color=None):
+    def __init__(
+        self,
+        line_type="solid",
+        line_thickness=1.0,
+        dash_parameters=None,
+        dash_auto_mode=False,
+        color=None,
+    ):
         self.line_type = line_type
         self.line_thickness = line_thickness
         self.dash_parameters = dash_parameters or {}
@@ -18,7 +26,7 @@ class Geometry:
         angle_radians = math.radians(angle_degrees)
         cos_a = math.cos(angle_radians)
         sin_a = math.sin(angle_radians)
-        
+
         def rotate_point(point):
             dx = point.x() - center_point.x()
             dy = point.y() - center_point.y()
@@ -26,19 +34,19 @@ class Geometry:
             new_y = center_point.y() + dx * sin_a + dy * cos_a
             return QPointF(new_x, new_y)
 
-        if hasattr(self, 'points'):
+        if hasattr(self, "points"):
             self.points = [rotate_point(p) for p in self.points]
-        if hasattr(self, 'start_point'):
+        if hasattr(self, "start_point"):
             self.start_point = rotate_point(self.start_point)
-        if hasattr(self, 'end_point'):
+        if hasattr(self, "end_point"):
             self.end_point = rotate_point(self.end_point)
-        if hasattr(self, 'center'):
+        if hasattr(self, "center"):
             self.center = rotate_point(self.center)
-        if hasattr(self, 'radius_point'):
+        if hasattr(self, "radius_point"):
             self.radius_point = rotate_point(self.radius_point)
-        if hasattr(self, 'chord_point'):
+        if hasattr(self, "chord_point"):
             self.chord_point = rotate_point(self.chord_point)
-        if hasattr(self, 'rect'):
+        if hasattr(self, "rect"):
             topleft = rotate_point(self.rect.topLeft())
             bottomright = rotate_point(self.rect.bottomRight())
             self.rect = QRectF(topleft, bottomright)
@@ -48,14 +56,14 @@ class Geometry:
 
     def create_pen(self):
         pen = QPen()
-        pen.setColor(self.color) 
+        pen.setColor(self.color)
         pen.setWidthF(self.line_thickness)
         pen.setCosmetic(False)
         pen.setCapStyle(Qt.FlatCap)
 
-        if self.line_type == 'solid':
+        if self.line_type == "solid":
             pen.setStyle(Qt.SolidLine)
-        elif self.line_type in ['dash', 'dash_dot', 'dash_dot_dot']:
+        elif self.line_type in ["dash", "dash_dot", "dash_dot_dot"]:
             pen.setStyle(Qt.CustomDashLine)
             pen.setDashPattern(self._compute_dash_pattern())
         else:
@@ -75,8 +83,14 @@ class Geometry:
         return self._generate_closed_pattern(total_length)
 
     def _generate_unclosed_pattern(self, total_length):
-        ratio_map = {'dash': [4, 2, 0], 'dash_dot': [4, 2, 2], 'dash_dot_dot': [4, 2, 1]}
-        return self._compute_scaled_pattern(total_length, ratio_map.get(self.line_type, [4, 2, 0]))
+        ratio_map = {
+            "dash": [4, 2, 0],
+            "dash_dot": [4, 2, 2],
+            "dash_dot_dot": [4, 2, 1],
+        }
+        return self._compute_scaled_pattern(
+            total_length, ratio_map.get(self.line_type, [4, 2, 0])
+        )
 
     def _generate_closed_pattern(self, total_length):
         N = 10
@@ -87,18 +101,23 @@ class Geometry:
 
     def _generate_custom_dash_pattern(self):
         params = self.dash_parameters
-        if self.line_type == 'dash':
-            return [params.get('dash_length', 5), params.get('dash_gap', 5)]
-        if self.line_type == 'dash_dot':
+        if self.line_type == "dash":
+            return [params.get("dash_length", 5), params.get("dash_gap", 5)]
+        if self.line_type == "dash_dot":
             return [
-                params.get('dash_length', 5), params.get('dash_space', 3),
-                params.get('dot_length', 1), params.get('dash_space', 3)
+                params.get("dash_length", 5),
+                params.get("dash_space", 3),
+                params.get("dot_length", 1),
+                params.get("dash_space", 3),
             ]
-        if self.line_type == 'dash_dot_dot':
+        if self.line_type == "dash_dot_dot":
             return [
-                params.get('dash_length', 5), params.get('dash_space', 3),
-                params.get('dot_length', 1), params.get('dot_space', 2),
-                params.get('dot_length', 1), params.get('dash_space', 3)
+                params.get("dash_length", 5),
+                params.get("dash_space", 3),
+                params.get("dot_length", 1),
+                params.get("dot_space", 2),
+                params.get("dot_length", 1),
+                params.get("dash_space", 3),
             ]
         return []
 
@@ -107,9 +126,8 @@ class Geometry:
         scale_factor = self.line_thickness
         dash_ratio, gap_ratio, dot_ratio = ratios
 
-        denominator = (
-            pattern_count * dash_ratio +
-            (pattern_count - 1) * (gap_ratio + (dot_ratio if dot_ratio > 0 else 0))
+        denominator = pattern_count * dash_ratio + (pattern_count - 1) * (
+            gap_ratio + (dot_ratio if dot_ratio > 0 else 0)
         )
         unit_length = total_length / denominator
 

@@ -11,15 +11,15 @@ LINE_TYPES = {
 }
 DRAWING_MODES = {
     "line": "Линия",
-    "circle_center_radius": "Окуржность по центру и радиусу",
+    "circle_center_radius": "Окружность по центру и радиусу",
     "circle_three_points": "Окружность по трём точкам",
     "arc_three_points": "Дуга по трём точкам",
     "arc_radius_chord": "Дуга по радиусу и хорде",
     "polygon": "Многоугольник по точкам",
-    "polygon_inscribed": "Вписанный прямоугольник",
-    "polygon_circumscribed": "Описанный прямоугольник",
+    "polygon_inscribed": "Вписанный многоугольник",
+    "polygon_circumscribed": "Описанный многоугольник",
     "rectangle_sides": "Прямоугольник по сторонам",
-    "rectangle_center": "От центра",
+    "rectangle_center": "Прямоугольник от центра",
     "spline_bezier": "Сплайн Безье",
     "spline_segments": "Сплайн по отрезкам",
 }
@@ -63,7 +63,7 @@ STANDART_COLORS = {
 }
 
 STANDART_THICKNESSES = [
-    0.00,
+    0.01,
     0.05,
     0.09,
     0.13,
@@ -80,7 +80,14 @@ STANDART_THICKNESSES = [
 ]
 
 GRID_SIZE = 50
+GRID_RANGE = [1, 1000]
+SNAP_GRID = True
+
 SCALE_STEP = 0.01
 SCALE_LIMITS = [0.001, 3000]
 CANVAS_LIMIT = 10000
 BACKGROUND_IMAGE = "resources/themes/bg.jpg"
+TOOLBAR_HEIGHT = 150
+
+PRIMARY_COLOR = "#ffde8c"
+ON_PRIMARY_COLOR = "#000000"

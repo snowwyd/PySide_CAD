@@ -1,4 +1,5 @@
 import sys
+import os
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -8,13 +9,25 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QFileDialog,
     QLabel,
+    QHBoxLayout,
+    QVBoxLayout,
+    QWidget,
+    QToolBar,
+    QTabWidget,
+    QToolButton,
+    QFrame,
+    QGridLayout,
+    QSizePolicy,
+    QSpinBox,
+    QMenu,
+    QStyleFactory,
 )
-from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QIcon, QPalette, QFont
+from PySide6.QtCore import Qt, QSize
 from app.ui.canvas import Canvas
 from app.ui.object_tree import ConstructionTree
 from PySide6.QtGui import QColor
-from app.utils.handle_dxf import save_to_dxf_advanced, read_from_dxf
+from app.utils.handle_dxf import *
 from app.config.config import *
 
 
@@ -23,84 +36,255 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("D-FLEX 2025")
         self.setGeometry(100, 100, 1600, 1000)
-        self.is_dark_theme = False
+        self.showMaximized()
         self.current_file = None
         self.initUI()
 
     def initUI(self):
         self.canvas = Canvas(self)
-        self.setCentralWidget(self.canvas)
-        self.createMenus()
+        self.toolTabs = self.createToolTabs()
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.toolTabs)
+        layout.addWidget(self.canvas, 1)
+        container.setLayout(layout)
+        self.setCentralWidget(container)
+        self.menuBar().setVisible(False)
         self.createStatusBar()
         self.createConstructionTree()
 
-    def setGridSize(self):
-        size, ok = QInputDialog.getInt(
-            self,
-            "Размер сетки",
-            "Введите размер ячейки сетки:",
-            value=self.canvas.grid_size,
-            minValue=10,
-            maxValue=200,
+    def createToolTabs(self):
+        tabs = QTabWidget()
+        tabs.setTabPosition(QTabWidget.North)
+        tabs.setMovable(False)
+        tabs.setFixedHeight(TOOLBAR_HEIGHT)
+
+        tabs.addTab(self._createFileTab(), "Файл")
+        tabs.addTab(self._createWorkspaceTab(), "Рабочее пространство")
+        tabs.addTab(self._createObjectsTab(), "Объекты")
+        tabs.addTab(self._createStyleTab(), "Стиль")
+
+        return tabs
+
+    def _createGroup(self, title, widget):
+        group = QWidget()
+        vlay = QVBoxLayout(group)
+        vlay.setSpacing(5)
+        label = QLabel(title)
+        label.setAlignment(Qt.AlignCenter)
+        label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        vlay.addWidget(label)
+        vlay.addWidget(widget)
+        return group
+
+    def _separator(self):
+        sep = QFrame()
+        sep.setObjectName("separator")
+        sep.setFrameShape(QFrame.NoFrame)
+        sep.setFixedWidth(2)
+        sep.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        return sep
+
+    def _createFileTab(self):
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        create_widget = self._makeButtonGrid(
+            [
+                ("Новый", self.newFile),
+                ("Открыть DXF", self.openDxfFile),
+            ]
         )
-        if ok:
-            self.canvas.grid_size = size
-            self.canvas.update()
-            self.statusBar.showMessage(f"Размер сетки установлен: {size}")
+        save_widget = self._makeButtonGrid(
+            [
+                ("Сохранить", self.saveFile),
+                ("Сохранить как", self.saveFileAs),
+            ]
+        )
+        exit_widget = self._makeButtonGrid(
+            [
+                ("Выход", self.close),
+            ]
+        )
+        layout.addWidget(self._createGroup("Создание", create_widget))
+        layout.addWidget(self._separator())
+        layout.addWidget(self._createGroup("Сохранение", save_widget))
+        layout.addWidget(self._separator())
+        layout.addWidget(self._createGroup("Выход", exit_widget))
+        layout.addStretch()
+        return widget
 
-    def createMenus(self):
-        mainMenu = self.menuBar()
+    def _createWorkspaceTab(self):
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
 
-        fileMenu = mainMenu.addMenu("Файл")
+        # Coordinate system group
+        coord_widget = self._makeButtonGrid(
+            [
+                ("Полярная", lambda: self.setCoordinateSystem("polar")),
+                ("Декартова", lambda: self.setCoordinateSystem("cartesian")),
+            ]
+        )
+        layout.addWidget(self._createGroup("Система координат", coord_widget))
+        layout.addWidget(self._separator())
 
-        newAction = QAction("Новый", self)
-        newAction.setShortcut("Ctrl+N")
-        newAction.setStatusTip("Создать новый файл")
-        newAction.triggered.connect(self.newFile)
-        fileMenu.addAction(newAction)
+        # Grid group with toggle, snap and spinbox for size
+        grid_widget = QWidget()
+        g_layout = QGridLayout(grid_widget)
+        g_layout.setSpacing(5)
 
-        openDxfAction = QAction("Открыть DXF...", self)
-        openDxfAction.setShortcut("Ctrl+O")
-        openDxfAction.setStatusTip("Открыть файл DXF")
-        openDxfAction.triggered.connect(self.openDxfFile)
-        fileMenu.addAction(openDxfAction)
+        # Toggle grid display
+        toggle_btn = QToolButton()
+        toggle_btn.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "resources",
+                    "icons",
+                    "показ_сетки.png",
+                )
+            )
+        )
+        toggle_btn.setIconSize(QSize(32, 32))
+        toggle_btn.setToolTip("Показать/скрыть сетку")
+        toggle_btn.clicked.connect(self.toggleGrid)
+        g_layout.addWidget(toggle_btn, 0, 0)
 
-        saveAction = QAction("Сохранить", self)
-        saveAction.setShortcut("Ctrl+S")
-        saveAction.setStatusTip("Сохранить файл")
-        saveAction.triggered.connect(self.saveFile)
-        fileMenu.addAction(saveAction)
+        # Snap to grid
+        snap_btn = QToolButton()
+        snap_btn.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "resources",
+                    "icons",
+                    "привязка_к_сетке.png",
+                )
+            )
+        )
+        snap_btn.setIconSize(QSize(32, 32))
+        snap_btn.setToolTip("Привязка к сетке")
+        snap_btn.setCheckable(True)
+        snap_btn.clicked.connect(self.toggleSnapGrid)
+        g_layout.addWidget(snap_btn, 0, 1)
 
-        saveAsAction = QAction("Сохранить как...", self)
-        saveAsAction.setShortcut("Ctrl+Shift+S")
-        saveAsAction.setStatusTip("Сохранить файл как...")
-        saveAsAction.triggered.connect(self.saveFileAs)
-        fileMenu.addAction(saveAsAction)
+        # Grid size input
+        spin = QSpinBox()
+        spin.setRange(GRID_RANGE[0], GRID_RANGE[1])
+        spin.setValue(self.canvas.grid_size)
+        spin.setPrefix("Размер сетки: ")
+        spin.setSuffix(" mm")
+        spin.valueChanged.connect(self._setGridSize)
+        g_layout.addWidget(spin, 0, 2)
 
-        fileMenu.addSeparator()
+        layout.addWidget(self._createGroup("Сетка", grid_widget))
+        layout.addStretch()
+        return widget
 
-        exitAction = QAction("Выход", self)
-        exitAction.setShortcut("Ctrl+Q")
-        exitAction.setStatusTip("Выйти из программы")
-        exitAction.triggered.connect(self.close)
-        fileMenu.addAction(exitAction)
+    def _createObjectsTab(self):
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        base_modes = [
+            (label, lambda checked, m=mode: self.setDrawingMode(m))
+            for mode, label in DRAWING_MODES.items()
+            if not any(mode in grp for grp in GROUPED_DRAWING_MODES.values())
+        ]
+        layout.addWidget(
+            self._createGroup("Основные", self._makeButtonGrid(base_modes))
+        )
+        layout.addWidget(self._separator())
+        for group_name, modes in GROUPED_DRAWING_MODES.items():
+            actions = [
+                (DRAWING_MODES[m], lambda checked, m=m: self.setDrawingMode(m))
+                for m in modes
+            ]
+            layout.addWidget(
+                self._createGroup(group_name, self._makeButtonGrid(actions))
+            )
+            layout.addWidget(self._separator())
+        layout.addStretch()
+        return widget
 
-        gridMenu = mainMenu.addMenu("Сетка")
+    def _createStyleTab(self):
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        # Color selection button with menu
+        color_btn = QToolButton()
+        color_btn.setIconSize(QSize(32, 32))
 
-        gridAction = QAction("Показать/скрыть сетку", self)
-        gridAction.setStatusTip("Переключить отображение сетки")
-        gridAction.triggered.connect(self.toggleGrid)
-        gridMenu.addAction(gridAction)
+        color_btn.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "resources",
+                    "icons",
+                    "выбор_цвета.png",
+                )
+            )
+        )
+        color_btn.setToolTip("Выбрать цвет")
+        color_menu = QMenu(color_btn)
+        for name, rgb in STANDART_COLORS.items():
+            icon = QAction(
+                QIcon(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "resources",
+                        "icons",
+                        name.lower() + ".png",
+                    )
+                ),
+                name,
+                self,
+            )
+            icon.triggered.connect(lambda checked, n=name: self._setColor(n))
+            color_menu.addAction(icon)
+        color_btn.setMenu(color_menu)
+        color_btn.setPopupMode(QToolButton.InstantPopup)
+        # Thickness selection
+        thick_btn = QToolButton()
+        thick_btn.setIconSize(QSize(32, 32))
 
-        gridSizeAction = QAction("Размер сетки", self)
-        gridSizeAction.setStatusTip("Изменить размер ячейки сетки")
-        gridSizeAction.triggered.connect(self.setGridSize)
-        gridMenu.addAction(gridSizeAction)
-
-        self.createDrawingObjectsMenu(mainMenu)
-        self.createLineSettingsMenu(mainMenu)
-        self.createShapeSettingsMenu(mainMenu)
-        self.createCoordinateSystemMenu(mainMenu)
+        thick_btn.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "resources",
+                    "icons",
+                    "толщина_линии.png",
+                )
+            )
+        )
+        thick_btn.setToolTip("Толщина линии")
+        thick_menu = QMenu(thick_btn)
+        for t in STANDART_THICKNESSES:
+            act = QAction(f"{t:.2f} мм", self)
+            act.triggered.connect(lambda checked, v=t: self._setThickness(v))
+            thick_menu.addAction(act)
+        thick_btn.setMenu(thick_menu)
+        thick_btn.setPopupMode(QToolButton.InstantPopup)
+        # Add to group
+        style_widget = QWidget()
+        s_layout = QHBoxLayout(style_widget)
+        s_layout.setSpacing(5)
+        s_layout.addWidget(color_btn)
+        s_layout.addWidget(thick_btn)
+        layout.addWidget(self._createGroup("Параметры", style_widget))
+        layout.addWidget(self._separator())
+        type_widget = self._makeButtonGrid(
+            [
+                (label, lambda checked, lt=lt: self.setLineType(lt))
+                for lt, label in LINE_TYPES.items()
+            ]
+        )
+        layout.addWidget(self._createGroup("Тип", type_widget))
+        layout.addStretch()
+        return widget
 
     def toggleGrid(self):
         self.canvas.show_grid = not self.canvas.show_grid
@@ -108,142 +292,49 @@ class MainWindow(QMainWindow):
         grid_state = "включена" if self.canvas.show_grid else "выключена"
         self.statusBar.showMessage(f"Сетка {grid_state}")
 
-    def createDrawingObjectsMenu(self, menu):
-        drawingObjectsMenu = menu.addMenu("Объекты")
-
-        for mode, label in DRAWING_MODES.items():
-            if not any(mode in group for group in GROUPED_DRAWING_MODES.values()):
-                action = QAction(label, self)
-                action.setStatusTip(f"Режим рисования: {label}")
-                action.triggered.connect(lambda checked, m=mode: self.setDrawingMode(m))
-                drawingObjectsMenu.addAction(action)
-
-        group_order = GROUP_ORDER
-
-        for group_name in group_order:
-            if group_name in GROUPED_DRAWING_MODES:
-                modes = GROUPED_DRAWING_MODES[group_name]
-                groupMenu = drawingObjectsMenu.addMenu(group_name)
-                for mode in modes:
-                    action = QAction(DRAWING_MODES[mode], self)
-                    action.setStatusTip(f"Режим рисования: {DRAWING_MODES[mode]}")
-                    action.triggered.connect(
-                        lambda checked, m=mode: self.setDrawingMode(m)
+    def _makeButtonGrid(self, actions):
+        widget = QWidget()
+        grid = QGridLayout(widget)
+        grid.setSpacing(5)
+        for idx, (text, slot) in enumerate(actions):
+            btn = QToolButton()
+            btn.setIconSize(QSize(32, 32))
+            btn.setText("")
+            btn.setIcon(
+                QIcon(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "resources",
+                        "icons",
+                        text.lower().replace(" ", "_") + ".png",
                     )
-                    groupMenu.addAction(action)
-
-    def createLineSettingsMenu(self, menu):
-        lineSettingsMenu = menu.addMenu("Тип линии")
-        for line_type, label in LINE_TYPES.items():
-            action = QAction(label, self)
-            action.setStatusTip(f"Установить {label.lower()}")
-            action.triggered.connect(lambda checked, lt=line_type: self.setLineType(lt))
-            lineSettingsMenu.addAction(action)
-
-    def createShapeSettingsMenu(self, menu):
-        shapeSettingsMenu = menu.addMenu("Настройки объектов")
-
-        colorAction = QAction("Выбрать цвет", self)
-        colorAction.setStatusTip("Выбрать цвет для новых построений")
-        colorAction.triggered.connect(self.chooseColor)
-        shapeSettingsMenu.addAction(colorAction)
-
-        lineThicknessAction = QAction("Толщина линии", self)
-        lineThicknessAction.setStatusTip("Изменить толщину линии")
-        lineThicknessAction.triggered.connect(self.setLineThickness)
-        shapeSettingsMenu.addAction(lineThicknessAction)
-
-    def chooseColor(self):
-        from PySide6.QtWidgets import (
-            QDialog,
-            QVBoxLayout,
-            QPushButton,
-            QHBoxLayout,
-            QLabel,
-            QGridLayout,
-        )
-        from PySide6.QtGui import QColor, QIcon, QPixmap
-        from PySide6.QtCore import Qt, QSize
-
-        standard_colors = STANDART_COLORS
-
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Выберите CAD-совместимый цвет")
-        dialog.setMinimumWidth(400)
-
-        layout = QVBoxLayout()
-        layout.setSpacing(10)
-
-        info_label = QLabel("Выберите один из стандартных CAD-совместимых цветов:")
-        info_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(info_label)
-
-        grid = QGridLayout()
-        grid.setSpacing(10)
-
-        def create_color_square(color):
-            pixmap = QPixmap(32, 32)
-            pixmap.fill(color)
-            return QIcon(pixmap)
-
-        row, col = 0, 0
-        for color_name, rgb in standard_colors.items():
-            color = QColor(*rgb)
-            button = QPushButton()
-            button.setToolTip(color_name)
-            button.setIcon(create_color_square(color))
-            button.setIconSize(QSize(32, 32))
-            button.setMinimumHeight(50)
-            button.clicked.connect(
-                lambda checked, c=color: self.setSelectedColor(c, dialog)
+                )
             )
+            btn.setToolTip(text)
+            btn.clicked.connect(slot)
+            col = idx
+            grid.addWidget(btn, 1, col)
+        return widget
 
-            color_layout = QVBoxLayout()
-            color_layout.addWidget(button)
-            color_layout.addWidget(QLabel(color_name, alignment=Qt.AlignCenter))
+    def _setGridSize(self, val):
+        self.canvas.grid_size = val
+        self.canvas.update()
+        self.statusBar.showMessage(f"Размер сетки установлен: {val}")
 
-            grid.addLayout(color_layout, row, col)
+    def _setColor(self, name):
+        rgb = STANDART_COLORS[name]
+        color = QColor(*rgb)
+        self.canvas.currentColor = color
+        self.statusBar.showMessage(f"Цвет: {name}")
 
-            col += 1
-            if col > 2:
-                col = 0
-                row += 1
-
-        layout.addLayout(grid)
-
-        buttons_layout = QHBoxLayout()
-        cancel_button = QPushButton("Отмена")
-        cancel_button.clicked.connect(dialog.reject)
-        buttons_layout.addWidget(cancel_button)
-
-        layout.addLayout(buttons_layout)
-
-        dialog.setLayout(layout)
-        dialog.exec()
-
-    def setSelectedColor(self, color, dialog):
-        if color.isValid():
-            self.canvas.currentColor = color
-            self.statusBar.showMessage(f"Цвет линии изменен на {color.name()}")
-            dialog.accept()
-
-    def createCoordinateSystemMenu(self, menu):
-        coordinateSystemMenu = menu.addMenu("Система координат")
-
-        polarAction = QAction("Полярная", self)
-        polarAction.setStatusTip("Переключиться на Полярную систему координат")
-        polarAction.triggered.connect(lambda: self.setCoordinateSystem("polar"))
-        coordinateSystemMenu.addAction(polarAction)
-
-        cartesianAction = QAction("Декартова", self)
-        cartesianAction.setStatusTip("Переключиться на Декартову систему координат")
-        cartesianAction.triggered.connect(lambda: self.setCoordinateSystem("cartesian"))
-        coordinateSystemMenu.addAction(cartesianAction)
+    def _setThickness(self, val):
+        self.canvas.lineThickness = val
+        self.statusBar.showMessage(f"Толщина: {val:.2f} мм")
 
     def createConstructionTree(self):
         if not self.findChild(QDockWidget, "Дерево построений"):
             self.constructionTree = ConstructionTree(self, self.canvas)
-            self.addDockWidget(Qt.RightDockWidgetArea, self.constructionTree)
+            self.addDockWidget(Qt.LeftDockWidgetArea, self.constructionTree)
 
     def createStatusBar(self):
         self.statusBar = QStatusBar()
@@ -281,53 +372,6 @@ class MainWindow(QMainWindow):
     def setLineType(self, line_type):
         self.canvas.lineType = line_type
         self.statusBar.showMessage(f"Установлен тип линии: {LINE_TYPES[line_type]}")
-
-    def setLineThickness(self):
-        standard_thicknesses = STANDART_THICKNESSES
-
-        current_thickness = self.canvas.lineThickness
-        closest_thickness = min(
-            standard_thicknesses, key=lambda x: abs(x - current_thickness)
-        )
-        current_index = standard_thicknesses.index(closest_thickness)
-
-        thickness_labels = []
-        for t in standard_thicknesses:
-            if t <= 0.09:
-                category = "Очень тонкая"
-            elif t <= 0.25:
-                category = "Тонкая"
-            elif t <= 0.50:
-                category = "Средняя"
-            elif t <= 0.70:
-                category = "Толстая"
-            else:
-                category = "Очень толстая"
-            thickness_labels.append(f"{t:.2f} мм ({category})")
-
-        thickness, ok = QInputDialog.getItem(
-            self,
-            "Толщина линии",
-            "Выберите стандартную толщину линии по ISO:",
-            thickness_labels,
-            current_index,
-            False,
-        )
-
-        if ok:
-            selected_thickness = float(thickness.split()[0])
-            self.canvas.lineThickness = selected_thickness
-            self.statusBar.showMessage(
-                f"Толщина линии установлена: {selected_thickness} мм"
-            )
-
-    def rotateLeft(self):
-        self.canvas.rotate(10)
-        self.statusBar.showMessage("Поворот против часовой стрелки")
-
-    def rotateRight(self):
-        self.canvas.rotate(-10)
-        self.statusBar.showMessage("Поворот по часовой стрелке")
 
     def newFile(self):
         if self.canvas.shapes and self.confirmSaveChanges():
@@ -453,6 +497,9 @@ class MainWindow(QMainWindow):
         else:
             return None
 
+    def toggleSnapGrid(self, checked):
+        self.canvas.snap_grid = checked
+
     def getFileNameFromPath(self, path):
         import os
 
@@ -479,8 +526,60 @@ class MainWindow(QMainWindow):
             event.accept()
 
 
+def apply_material_theme(app, dark=False):
+    # Set Fusion style as base
+    app.setStyle(QStyleFactory.create("Fusion"))
+    # Set global font
+
+    palette = QPalette()
+    primary = QColor(PRIMARY_COLOR)
+    on_primary = QColor(ON_PRIMARY_COLOR)
+    secondary = QColor("#03DAC6")
+    surface = QColor("#FFFFFF")
+    background = QColor("#FAFAFA")
+    on_surface = QColor("#000000")
+
+    # Assign palette roles
+    palette.setColor(QPalette.Window, background)
+    palette.setColor(QPalette.WindowText, on_surface)
+    palette.setColor(QPalette.Base, surface)
+    palette.setColor(QPalette.AlternateBase, background)
+    palette.setColor(QPalette.ToolTipBase, on_surface)
+    palette.setColor(QPalette.ToolTipText, on_surface)
+    palette.setColor(QPalette.Text, on_surface)
+    palette.setColor(QPalette.Button, surface)
+    palette.setColor(QPalette.ButtonText, on_surface)
+    palette.setColor(QPalette.Highlight, primary)
+    palette.setColor(QPalette.HighlightedText, on_primary)
+    palette.setColor(QPalette.Link, secondary)
+    app.setPalette(palette)
+
+    # QSS for additional styling
+    app.setStyleSheet(
+        f"""
+        /* General font */
+        * {{ font-family: Consolas; }}
+        /* Tooltips */
+        QToolTip {{ background-color: {surface.name()}; color: {on_surface.name()}; border: 1px solid {primary.name()}; }}
+        /* Tool buttons */
+        QToolButton {{ border: none; padding: 6px; border-radius: 4px; qproperty-toolButtonStyle: IconOnly; }}
+        QToolButton:hover {{ background-color: {primary.lighter(150).name()}; }}
+        QToolButton:pressed, QToolButton:checked {{ background-color: {primary.name()}; color: {on_primary.name()}; }}
+        /* Tabs */
+        QTabWidget::pane {{ border: none; }}
+        QTabBar::tab {{ background: {surface.name()}; color: {on_surface.name()}; padding: 8px 16px; border-radius: 4px; margin: 2px; }}
+        QTabBar::tab:selected {{ background: {primary.name()}; color: {on_primary.name()}; }}
+        /* Spinboxes */
+        QSpinBox {{ padding: 4px; border-radius: 4px; }}
+        /* Separator lines */
+        QFrame#separator {{ background-color: {surface.name()}; }}
+    """
+    )
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_material_theme(app)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
