@@ -28,6 +28,7 @@ from app.ui.canvas import Canvas
 from app.ui.object_tree import ConstructionTree
 from PySide6.QtGui import QColor
 from app.utils.handle_dxf import *
+from app.utils.handle_input import *
 from app.config.config import *
 
 
@@ -38,6 +39,10 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1600, 1000)
         self.showMaximized()
         self.current_file = None
+        self.manualState = False
+        self.dock_flag = False
+        self.line_input_dock = None
+        self.handle_manual_input = lambda: handle_manual_input(self)
         self.initUI()
 
     def initUI(self):
@@ -150,6 +155,7 @@ class MainWindow(QMainWindow):
         )
         toggle_btn.setIconSize(QSize(32, 32))
         toggle_btn.setToolTip("Показать/скрыть сетку")
+        toggle_btn.setCheckable(True)
         toggle_btn.clicked.connect(self.toggleGrid)
         g_layout.addWidget(toggle_btn, 0, 0)
 
@@ -188,24 +194,45 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(5, 5, 5, 5)
+
+        manual_widget = QWidget()
+        manual_layout = QGridLayout(manual_widget)
+        manual_layout.setSpacing(5)
+
+        manual_btn = QToolButton()
+        manual_btn.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "resources",
+                    "icons",
+                    "ручной_ввод.png",
+                )
+            )
+        )
+        manual_btn.setIconSize(QSize(32, 32))
+        manual_btn.setToolTip("Ручной ввод")
+        manual_btn.clicked.connect(self.handleManualInput)
+        manual_layout.addWidget(manual_btn, 0, 0)
+
+        layout.addWidget(self._createGroup("Ручной ввод", manual_widget))
+        layout.addWidget(self._separator())
         base_modes = [
             (label, lambda checked, m=mode: self.setDrawingMode(m))
             for mode, label in DRAWING_MODES.items()
             if not any(mode in grp for grp in GROUPED_DRAWING_MODES.values())
         ]
-        layout.addWidget(
-            self._createGroup("Основные", self._makeButtonGrid(base_modes))
-        )
-        layout.addWidget(self._separator())
+        layout.addWidget(self._createGroup("Линия", self._makeButtonGrid(base_modes)))
         for group_name, modes in GROUPED_DRAWING_MODES.items():
             actions = [
                 (DRAWING_MODES[m], lambda checked, m=m: self.setDrawingMode(m))
                 for m in modes
             ]
+            layout.addWidget(self._separator())
             layout.addWidget(
                 self._createGroup(group_name, self._makeButtonGrid(actions))
             )
-            layout.addWidget(self._separator())
+
         layout.addStretch()
         return widget
 
@@ -242,7 +269,7 @@ class MainWindow(QMainWindow):
                 name,
                 self,
             )
-            icon.triggered.connect(lambda checked, n=name: self._setColor(n))
+            icon.triggered.connect(lambda checked, n=name: self.setColor(n))
             color_menu.addAction(icon)
         color_btn.setMenu(color_menu)
         color_btn.setPopupMode(QToolButton.InstantPopup)
@@ -321,7 +348,7 @@ class MainWindow(QMainWindow):
         self.canvas.update()
         self.statusBar.showMessage(f"Размер сетки установлен: {val}")
 
-    def _setColor(self, name):
+    def setColor(self, name):
         rgb = STANDART_COLORS[name]
         color = QColor(*rgb)
         self.canvas.currentColor = color
@@ -332,7 +359,7 @@ class MainWindow(QMainWindow):
         self.statusBar.showMessage(f"Толщина: {val:.2f} мм")
 
     def createConstructionTree(self):
-        if not self.findChild(QDockWidget, "Дерево построений"):
+        if not self.findChild(QDockWidget, "Редактирование объектов"):
             self.constructionTree = ConstructionTree(self, self.canvas)
             self.addDockWidget(Qt.LeftDockWidgetArea, self.constructionTree)
 
@@ -344,7 +371,17 @@ class MainWindow(QMainWindow):
         self.statusBar.addPermanentWidget(self.fileNameLabel)
 
     def handleManualInput(self):
-        self.canvas.handle_manual_input()
+        handle_manual_input(self, self.canvas)
+        self.dock_flag = not self.dock_flag
+        self.setDockFlag(self.dock_flag)
+
+    def setDockFlag(self, flag):
+        self.dock_flag = flag
+        if self.line_input_dock:
+            if flag == 0:
+                self.line_input_dock.hide()
+            elif flag == 1:
+                self.line_input_dock.show()
 
     def setCoordinateSystem(self, mode):
         self.canvas.inputCoordinateSystem = mode
