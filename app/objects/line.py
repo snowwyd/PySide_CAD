@@ -1,10 +1,12 @@
-from app.core.parent import Geometry
+import math
+from app.objects.parent import Geometry
 
 
-class Rectangle(Geometry):
+class Line(Geometry):
     def __init__(
         self,
-        rect,
+        start_point,
+        end_point,
         line_type="solid",
         line_thickness=1.0,
         dash_parameters=None,
@@ -14,11 +16,15 @@ class Rectangle(Geometry):
         super().__init__(
             line_type, line_thickness, dash_parameters, dash_auto_mode, color
         )
-        self.rect = rect
+        self.start_point = start_point
+        self.end_point = end_point
 
     def draw(self, painter, pen=None):
         super().draw(painter, pen)
-        painter.drawRect(self.rect)
+        painter.drawLine(self.start_point, self.end_point)
 
     def get_total_length(self):
-        return 2 * (self.rect.width() + self.rect.height())
+        return math.hypot(
+            self.end_point.x() - self.start_point.x(),
+            self.end_point.y() - self.start_point.y(),
+        )

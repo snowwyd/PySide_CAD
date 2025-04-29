@@ -2,12 +2,12 @@ import ezdxf
 import math
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QColor
-from app.core.line import Line
-from app.core.circle import Circle, CircleByThreePoints
-from app.core.arc import ArcByThreePoints, ArcByRadiusChord
-from app.core.polygon import Polygon
-from app.core.rectangle import Rectangle
-from app.core.spline import BezierSpline, SegmentSpline
+from app.objects.line import Line
+from app.objects.circle import Circle, CircleByThreePoints
+from app.objects.arc import ArcByThreePoints, ArcByRadiusChord
+from app.objects.polygon import Polygon
+from app.objects.rectangle import Rectangle
+from app.objects.spline import BezierSpline, SegmentSpline
 
 
 def save_to_dxf(shapes, filename):

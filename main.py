@@ -126,7 +126,6 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(5, 5, 5, 5)
 
-        # Coordinate system group
         coord_widget = self._makeButtonGrid(
             [
                 ("Полярная", lambda: self.setCoordinateSystem("polar")),
@@ -136,12 +135,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._createGroup("Система координат", coord_widget))
         layout.addWidget(self._separator())
 
-        # Grid group with toggle, snap and spinbox for size
         grid_widget = QWidget()
         g_layout = QGridLayout(grid_widget)
         g_layout.setSpacing(5)
 
-        # Toggle grid display
         toggle_btn = QToolButton()
         toggle_btn.setIcon(
             QIcon(
@@ -159,7 +156,6 @@ class MainWindow(QMainWindow):
         toggle_btn.clicked.connect(self.toggleGrid)
         g_layout.addWidget(toggle_btn, 0, 0)
 
-        # Snap to grid
         snap_btn = QToolButton()
         snap_btn.setIcon(
             QIcon(
@@ -177,7 +173,6 @@ class MainWindow(QMainWindow):
         snap_btn.clicked.connect(self.toggleSnapGrid)
         g_layout.addWidget(snap_btn, 0, 1)
 
-        # Grid size input
         spin = QSpinBox()
         spin.setRange(GRID_RANGE[0], GRID_RANGE[1])
         spin.setValue(self.canvas.grid_size)
@@ -240,7 +235,6 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(5, 5, 5, 5)
-        # Color selection button with menu
         color_btn = QToolButton()
         color_btn.setIconSize(QSize(32, 32))
 
@@ -273,7 +267,6 @@ class MainWindow(QMainWindow):
             color_menu.addAction(icon)
         color_btn.setMenu(color_menu)
         color_btn.setPopupMode(QToolButton.InstantPopup)
-        # Thickness selection
         thick_btn = QToolButton()
         thick_btn.setIconSize(QSize(32, 32))
 
@@ -295,7 +288,6 @@ class MainWindow(QMainWindow):
             thick_menu.addAction(act)
         thick_btn.setMenu(thick_menu)
         thick_btn.setPopupMode(QToolButton.InstantPopup)
-        # Add to group
         style_widget = QWidget()
         s_layout = QHBoxLayout(style_widget)
         s_layout.setSpacing(5)
@@ -564,9 +556,7 @@ class MainWindow(QMainWindow):
 
 
 def apply_material_theme(app, dark=False):
-    # Set Fusion style as base
     app.setStyle(QStyleFactory.create("Fusion"))
-    # Set global font
 
     palette = QPalette()
     primary = QColor(PRIMARY_COLOR)
@@ -576,7 +566,6 @@ def apply_material_theme(app, dark=False):
     background = QColor("#FAFAFA")
     on_surface = QColor("#000000")
 
-    # Assign palette roles
     palette.setColor(QPalette.Window, background)
     palette.setColor(QPalette.WindowText, on_surface)
     palette.setColor(QPalette.Base, surface)
@@ -591,7 +580,6 @@ def apply_material_theme(app, dark=False):
     palette.setColor(QPalette.Link, secondary)
     app.setPalette(palette)
 
-    # QSS for additional styling
     app.setStyleSheet(
         f"""
         /* General font */

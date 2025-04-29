@@ -1,5 +1,5 @@
 import math
-from app.core.parent import Geometry
+from app.objects.parent import Geometry
 
 
 class Polygon(Geometry):

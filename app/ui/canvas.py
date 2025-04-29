@@ -2,13 +2,13 @@ import math
 from PySide6.QtWidgets import QWidget, QInputDialog, QMessageBox
 from PySide6.QtGui import QPainter, QColor, QPen, QCursor, QImage
 from PySide6.QtCore import Qt, QPoint, QPointF, QRectF, QSizeF, Signal
-from app.core.line import Line
-from app.core.circle import Circle, CircleByThreePoints
+from app.objects.line import Line
+from app.objects.circle import Circle, CircleByThreePoints
 from app.utils.handle_input import handle_manual_input
-from app.core.arc import ArcByThreePoints, ArcByRadiusChord
-from app.core.polygon import Polygon
-from app.core.rectangle import Rectangle
-from app.core.spline import BezierSpline, SegmentSpline
+from app.objects.arc import ArcByThreePoints, ArcByRadiusChord
+from app.objects.polygon import Polygon
+from app.objects.rectangle import Rectangle
+from app.objects.spline import BezierSpline, SegmentSpline
 from app.config.config import *
 
 

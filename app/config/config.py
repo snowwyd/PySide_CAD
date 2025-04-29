@@ -86,7 +86,7 @@ SNAP_GRID = False
 SCALE_STEP = 0.01
 SCALE_LIMITS = [0.001, 3000]
 CANVAS_LIMIT = 10000
-BACKGROUND_IMAGE = "resources/themes/bg.jpg"
+BACKGROUND_IMAGE = "resources/themes/bg2.jpg"
 TOOLBAR_HEIGHT = 150
 
 PRIMARY_COLOR = "#ffde8c"

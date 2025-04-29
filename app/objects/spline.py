@@ -1,7 +1,7 @@
 import math
 from PySide6.QtGui import QPainterPath, QPen, QColor
 from PySide6.QtCore import QPointF, QRectF
-from app.core.parent import Geometry
+from app.objects.parent import Geometry
 from math import factorial
 from PySide6.QtCore import Qt
 

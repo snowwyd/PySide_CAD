@@ -1,6 +1,6 @@
 import math
 from PySide6.QtCore import QRectF, QPointF
-from app.core.parent import Geometry
+from app.objects.parent import Geometry
 
 
 class ArcByThreePoints(Geometry):

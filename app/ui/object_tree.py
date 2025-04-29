@@ -14,16 +14,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QColor, QBrush, QIcon, QLinearGradient, QPalette
 from PySide6.QtCore import Qt, QPointF, QRectF, QSizeF
 from PySide6.QtGui import QFont
-from app.core.line import Line
-from app.core.circle import Circle, CircleByThreePoints
-from app.core.arc import ArcByThreePoints, ArcByRadiusChord
-from app.core.polygon import Polygon
-from app.core.rectangle import Rectangle
-from app.core.spline import BezierSpline, SegmentSpline
+from app.objects.line import Line
+from app.objects.circle import Circle, CircleByThreePoints
+from app.objects.arc import ArcByThreePoints, ArcByRadiusChord
+from app.objects.polygon import Polygon
+from app.objects.rectangle import Rectangle
+from app.objects.spline import BezierSpline, SegmentSpline
 from PySide6.QtWidgets import QTreeWidgetItemIterator
 from app.config.config import *
-
-# TODO: имплементировать свою реализацию
 
 
 class ConstructionTree(QDockWidget):
